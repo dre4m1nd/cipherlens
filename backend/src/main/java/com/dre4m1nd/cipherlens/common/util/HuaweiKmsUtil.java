@@ -10,26 +10,29 @@ import com.huaweicloud.sdk.kms.v2.model.DecryptDataRequest;
 import com.huaweicloud.sdk.kms.v2.model.DecryptDataRequestBody;
 import com.huaweicloud.sdk.kms.v2.model.DecryptDataResponse;
 import com.huaweicloud.sdk.kms.v2.region.KmsRegion;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 
 @Slf4j
+@Component
 public final class HuaweiKmsUtil {
 
     public static final String REGION = "cn-south-1";
     public static final String KEY_ID = "fe7c0e06-381f-4d29-be61-f161e2d67225";
     public static final String ALGORITHM = "RSAES_OAEP_SHA_256";
 
-    public static final KmsClient CLIENT;
+    private static volatile KmsClient CLIENT;
 
-    @Value("${huawei.ak}")
-    private static String ak;
-    @Value("${huawei.sk}")
-    private static String sk;
+    @Value("${huawei.ak:}")
+    private String ak;
+    @Value("${huawei.sk:}")
+    private String sk;
 
-    static {
-
+    @PostConstruct
+    public void init() {
         ICredential auth = new BasicCredentials()
                 .withAk(ak)
                 .withSk(sk);
@@ -38,7 +41,6 @@ public final class HuaweiKmsUtil {
                 .withCredential(auth)
                 .withRegion(KmsRegion.valueOf(REGION))
                 .build();
-
     }
 
     public static String decrypt(String cipherText) {

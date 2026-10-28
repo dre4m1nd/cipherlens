@@ -29,7 +29,9 @@ public class WebConfig implements WebMvcConfigurer {
                         "/user/reset",
                         "/doc.html",
                         "/v3/api-docs",
-                        "/swagger-ui.html/**")
+                        "/swagger-ui.html/**",
+                        "/actuator/**",
+                        "/favicon.ico")
                 .order(1);
     }
 

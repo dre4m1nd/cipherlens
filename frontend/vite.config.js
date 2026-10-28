@@ -37,14 +37,14 @@ export default defineConfig((configEnv) => {
       host: '0.0.0.0',
       open: env.VITE_AUTO_OPEN === 'true',
       cors: true,
-      // 开发环境代理：保留 /api 前缀（不再 rewrite 删除），与生产环境一致
+      // 开发环境代理：把 /api 前缀转发到真实后端，并去掉 /api 前缀
+      // （后端接口本身无 /api 前缀，如 /user/login；生产环境由 Nginx 做同样处理）
       proxy: command === 'serve' 
         ? { 
             '/api': {
               target: env.VITE_API_URL || 'https://dev-api.xxx.com', // 开发环境真实后端地址
               changeOrigin: true,
               secure: false,
-              // 移除 rewrite！开发环境也保留 /api 前缀，和生产环境逻辑一致
                rewrite: (path) => path.replace(/^\/api/, '') 
             }
           }

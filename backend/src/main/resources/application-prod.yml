@@ -41,6 +41,17 @@ huawei:
 token:
   secret-key: ${TOKEN_SECRET_KEY:change-me-in-production}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+
 logging:
   file:
     name: /app/logs/cipherlens.log

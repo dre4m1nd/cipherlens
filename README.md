@@ -112,5 +112,6 @@ docker compose logs -f backend
 - **数据库**：`backend/sql/init.sql` 在 MySQL 卷为空时自动建库建表并写入弱密码种子；它只跑一次（删 `mysql-data` 卷可重置）。
 - **接口前缀**：前端请求走 `/api`，Nginx 在 `frontend/nginx.conf` 中去掉 `/api` 前缀转发到 `backend:8080`（后端无 context-path）。
 - **生产配置**：后端以 `prod` 环境启动，数据库连接、Redis、Token 密钥、华为云 KMS 均通过环境变量注入（见 `application-prod.yml` 与 `.env.example`）。
+- **健康检查**：后端暴露 `/actuator/health`（仅 health，无详情），已加入 Docker 健康检查；前端 `depends_on` 后端 healthy 后才启动，避免启动期 502。
 - **Token 秘钥**：`TOKEN_SECRET_KEY` 生产环境务必改成随机长字符串，否则有安全风险。
 - **华为云 KMS**：仅在使用 KMS 解密类功能时需要 `HUAWEI_AK` / `HUAWEI_SK`，否则留空。

@@ -15,7 +15,6 @@ service.interceptors.request.use(
   (config) => {
     // JWT鉴权处理 - 后端需要自定义token头
     const token = store.state.user.token
-    console.log('Token in request interceptor:', token)
     if (token) {
       // 检查token是否为对象，如果是则转换为字符串
       const tokenValue = typeof token === 'object' ? JSON.stringify(token) : token
