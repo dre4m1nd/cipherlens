@@ -1,0 +1,83 @@
+/* Layout Container Styles */
+@layer components {
+  .layout-container {
+    @apply bg-container-main-background w-[calc(100%-30px)] h-[calc(100%-30px)] m-3.75 flex flex-col overflow-y-auto;
+  }
+
+  .layout-container-form {
+    @apply flex justify-between p-3.75;
+  }
+
+  .layout-container-form-handle {
+    @apply flex justify-start;
+  }
+
+  .layout-container-form-handle .export-excel-btn {
+    @apply ml-3.75;
+  }
+
+  .layout-container-form-search {
+    @apply flex justify-end;
+  }
+
+  .layout-container-form-search .search-btn {
+    @apply ml-3.75;
+  }
+
+  .layout-container-form .el-form-item {
+    @apply mb-0;
+  }
+
+  .layout-container-table {
+    @apply flex-1 h-full p-3.75 overflow-auto;
+  }
+
+  /* Flex Utilities */
+  .flex-box {
+    @apply flex flex-col w-full h-full p-3.75 box-border;
+  }
+
+  .flex {
+    @apply flex;
+  }
+
+  .center {
+    @apply justify-center items-center text-center;
+  }
+
+  /* Link Styles */
+  a {
+    @apply no-underline;
+  }
+
+  /* Element Plus Overrides */
+  .el-icon {
+    @apply text-center;
+  }
+
+  /* Tip Styles */
+  .my-tip {
+    @apply bg-[#f1f1f1] p-1.25 text-left rounded-sm;
+  }
+
+  /* Scrollbar Styles */
+  .system-scrollbar::-webkit-scrollbar {
+    @apply hidden w-[6px];
+  }
+  
+  .system-scrollbar::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-[rgba(144,147,153,0.3)];
+  }
+  
+  .system-scrollbar:hover::-webkit-scrollbar {
+    @apply block;
+  }
+  
+  .system-scrollbar:hover::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-[rgba(144,147,153,0.3)];
+  }
+  
+  .system-scrollbar:hover::-webkit-scrollbar-thumb:hover {
+    @apply bg-[rgba(144,147,153,0.5)];
+  }
+}

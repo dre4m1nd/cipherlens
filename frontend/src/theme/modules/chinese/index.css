@@ -1,0 +1,6 @@
+/* Chinese Theme Styles */
+@layer components {
+  [data-theme='chinese'] .el-main {
+    @apply bg-[url('./screen.png')] bg-[length:100%_100%];
+  }
+}

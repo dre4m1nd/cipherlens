@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dre4m1nd.cipherlens.mapper.OperationLogMapper">
+
+    <resultMap id="BaseResultMap" type="com.dre4m1nd.cipherlens.model.entity.OperationLog">
+            <id property="id" column="id" />
+            <result property="userId" column="user_id" />
+            <result property="operationType" column="operation_type" />
+            <result property="operationTarget" column="operation_target" />
+            <result property="ipAddress" column="ip_address" />
+            <result property="operationResult" column="operation_result" />
+            <result property="operationTime" column="operation_time" />
+            <result property="deviceInfo" column="device_info" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,user_id,operation_type,operation_target,ip_address,operation_result,
+        operation_time,device_info
+    </sql>
+</mapper>
