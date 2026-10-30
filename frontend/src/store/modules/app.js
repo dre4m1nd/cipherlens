@@ -11,6 +11,7 @@ const state = () => ({
     state: {
       style: 'default',
       primaryColor: '#0f766e',
+      primaryTextColor: '#ffffff',
       menuType: 'side'
     }
   },

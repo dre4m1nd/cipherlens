@@ -5,6 +5,7 @@
 :root {
   /* 主题颜色 */
   --el-color-primary: var(--system-primary-color, #0f766e);
+  --system-primary-text-color: #ffffff;
   /* logo */
   --system-logo-color: #eaf3f1;
   --system-logo-background: #0f3b42;

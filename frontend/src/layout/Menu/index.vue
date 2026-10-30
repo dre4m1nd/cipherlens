@@ -18,7 +18,7 @@
 
 <script lang="js">
 import { defineComponent, computed, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useStore } from 'vuex'
 import MenuItem from './MenuItem.vue'
 import { modules } from '@/router' // 引入手动配置的路由数组
@@ -29,7 +29,6 @@ export default defineComponent({
   },
   setup() {
     const store = useStore()
-    const router = useRouter()
     const isCollapse = computed(() => store.state.app.isCollapse)
     const expandOneMenu = computed(() => store.state.app.expandOneMenu)
     const allRoutes = computed(() => modules) // 使用手动配置的路由数组，而不是router.getRoutes()
@@ -74,18 +73,18 @@ export default defineComponent({
 :deep(.el-menu-item.is-active),
 :deep(.el-sub-menu__title.is-active) {
   background-color: var(--system-primary-color) !important;
-  color: var(--system-primary-text-color) !important;
+  color: var(--system-primary-text-color, #ffffff) !important;
 }
 
 :deep(.el-menu-item.is-active i),
 :deep(.el-sub-menu__title.is-active i) {
-  color: var(--system-primary-text-color) !important;
+  color: var(--system-primary-text-color, #ffffff) !important;
 }
 
 :deep(.el-menu-item.is-active:hover),
 :deep(.el-sub-menu__title.is-active:hover) {
   background-color: var(--system-primary-color) !important;
-  color: var(--system-primary-text-color) !important;
+  color: var(--system-primary-text-color, #ffffff) !important;
 }
 
 :deep(.el-menu-item:hover),
@@ -104,12 +103,12 @@ export default defineComponent({
 
 :deep(.el-sub-menu .el-menu-item.is-active) {
   background-color: var(--system-primary-color) !important;
-  color: var(--system-primary-text-color) !important;
+  color: var(--system-primary-text-color, #ffffff) !important;
 }
 
 :deep(.el-sub-menu .el-menu-item.is-active:hover) {
   background-color: var(--system-primary-color) !important;
-  color: var(--system-primary-text-color) !important;
+  color: var(--system-primary-text-color, #ffffff) !important;
 }
 
 :deep(.el-sub-menu .el-menu-item:hover) {

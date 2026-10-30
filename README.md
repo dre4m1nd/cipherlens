@@ -4,19 +4,37 @@
 
 ## 界面
 
-| 登录 | 注册（含密码强度提示） |
-| --- | --- |
-| ![登录页](docs/screenshots/login.png) | ![注册页](docs/screenshots/register.png) |
+**账号与认证**
 
-| 首页 | 密码管理 |
+| 登录（大写锁定提示 · 字段校验） | 注册（实时密码强度） |
 | --- | --- |
-| ![首页](docs/screenshots/dashboard.png) | ![密码管理](docs/screenshots/password-list.png) |
+| ![登录](docs/screenshots/login.png) | ![注册](docs/screenshots/register.png) |
 
-| 密码评估 | 日志查询 |
+| 忘记密码（邮箱验证码） | 首页 |
 | --- | --- |
-| ![密码评估](docs/screenshots/password-evaluate.png) | ![日志查询](docs/screenshots/log.png) |
+| ![忘记密码](docs/screenshots/forgot-password.png) | ![首页](docs/screenshots/dashboard.png) |
 
-> 截图为 1440×760 的真实运行截图。
+**密码管理**
+
+| 密码项列表（检索 · 分页） | 随机密码生成器 |
+| --- | --- |
+| ![密码项列表](docs/screenshots/password-list.png) | ![密码生成器](docs/screenshots/password-generator.png) |
+
+| 多选批量操作 | 批量评估结果 |
+| --- | --- |
+| ![批量操作](docs/screenshots/batch-operations.png) | ![批量评估](docs/screenshots/batch-evaluate.png) |
+
+**密码评估**
+
+![密码评估](docs/screenshots/password-evaluate.png)
+
+**日志与账户**
+
+| 日志查询 | 修改信息 |
+| --- | --- |
+| ![日志查询](docs/screenshots/log.png) | ![修改信息](docs/screenshots/user-edit.png) |
+
+> 以上均为真实运行截图，非设计稿。
 
 ## 功能
 
