@@ -21,9 +21,6 @@ public class PasswordItemDTO {
     @Schema(description = "应用/网站名称")
     private String appName;
 
-    @Schema(description = "应用/网站网址")
-    private String appUrl;
-
     @NotBlank(message = "登录账号不能为空")
     @Schema(description = "登录账号")
     private String account;

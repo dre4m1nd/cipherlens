@@ -11,6 +11,7 @@ import com.dre4m1nd.cipherlens.exception.BusinessException;
 import com.dre4m1nd.cipherlens.exception.SystemException;
 import com.dre4m1nd.cipherlens.exception.UnAuthorizedException;
 import com.dre4m1nd.cipherlens.model.dto.SysUserDTO;
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,7 +34,7 @@ import static com.dre4m1nd.cipherlens.common.constants.RedisConstants.TOKEN_TTL;
 public class RedisTokenUtil {
 
     @Value("${token.secret-key}")
-    private static String secretKey;
+    private String secretKey;
 
     private static final String HASH_SALT = "cipherlens-salt-2025";
 
@@ -41,6 +42,16 @@ public class RedisTokenUtil {
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+
+    /**
+     * 启动时校验签名密钥，避免用空密钥/弱密钥签发 token
+     */
+    @PostConstruct
+    public void validateSecretKey() {
+        if (StrUtil.isBlank(secretKey) || secretKey.length() < 16) {
+            throw new IllegalStateException("token.secret-key 未配置或长度不足 16 位，请通过 TOKEN_SECRET_KEY 注入随机密钥");
+        }
+    }
 
     /**
      * 生成Token
@@ -62,13 +73,15 @@ public class RedisTokenUtil {
      * @param sysUserDTO 用户信息DTO
      */
     public void saveToken(String token, SysUserDTO sysUserDTO) {
-        String tokenKey = TOKEN_KEY_PREFIX + token;
-        if (StrUtil.isBlank(tokenKey)) {
+        if (sysUserDTO == null) {
             return;
         }
+        String tokenKey = TOKEN_KEY_PREFIX + token;
         Map<String, Object> sysUserMap = BeanUtil.beanToMap(sysUserDTO, false, false);
         sysUserMap.forEach((key, value) -> {
-            stringRedisTemplate.opsForHash().put(tokenKey, key, value.toString());
+            if (value != null) {
+                stringRedisTemplate.opsForHash().put(tokenKey, key, value.toString());
+            }
         });
         stringRedisTemplate.expire(tokenKey, TOKEN_TTL, TimeUnit.MINUTES);
     }
@@ -100,15 +113,24 @@ public class RedisTokenUtil {
             throw new UnAuthorizedException("未登录");
         }
         // 解码Token并按分隔符分割
-        String[] strings = Base64.decodeStr(token, StandardCharsets.UTF_8).split(SEPARATOR);
+        String[] strings;
         try {
-            // 验证签名是否匹配：重新计算签名并与Token中的签名比较
-            if (!strings[1].equals(hmacSha256WithSalt(Long.parseLong(strings[0])))){
-                throw new UnAuthorizedException("签名验证失败");
-            }
-        } catch (ArrayIndexOutOfBoundsException e) {
-            log.error("无效token格式: {}", e.getMessage());
+            strings = Base64.decodeStr(token, StandardCharsets.UTF_8).split(SEPARATOR);
+        } catch (Exception e) {
             throw new UnAuthorizedException("无效token格式");
+        }
+        if (strings.length != 2) {
+            throw new UnAuthorizedException("无效token格式");
+        }
+        Long userId;
+        try {
+            userId = Long.parseLong(strings[0]);
+        } catch (NumberFormatException e) {
+            throw new UnAuthorizedException("无效token格式");
+        }
+        // 验证签名是否匹配：重新计算签名并与Token中的签名比较
+        if (!strings[1].equals(hmacSha256WithSalt(userId))) {
+            throw new UnAuthorizedException("签名验证失败");
         }
         if (!isExistToken(token)) {
             log.error("token已过期");
@@ -133,13 +155,20 @@ public class RedisTokenUtil {
         if (StrUtil.isBlank(token)) {
             throw new UnAuthorizedException("未登录");
         }
-        String[] strings = null;
+        String[] strings;
         try {
             strings = Base64.decodeStr(token, StandardCharsets.UTF_8).split(SEPARATOR);
         } catch (Exception e) {
             throw new UnAuthorizedException("token解析失败");
         }
-        return Long.parseLong(strings[0]);
+        if (strings.length != 2) {
+            throw new UnAuthorizedException("无效token格式");
+        }
+        try {
+            return Long.parseLong(strings[0]);
+        } catch (NumberFormatException e) {
+            throw new UnAuthorizedException("无效token格式");
+        }
     }
 
     public <T> T getFieldByToken(String token, Function<SysUserDTO, T> function) {
@@ -147,11 +176,14 @@ public class RedisTokenUtil {
             return null;
         }
         String tokenKey = TOKEN_KEY_PREFIX + token;
-        SysUserDTO sysUserDTO = null;
+        SysUserDTO sysUserDTO;
         try {
             sysUserDTO = BeanUtil.mapToBean(stringRedisTemplate.opsForHash().entries(tokenKey), SysUserDTO.class, false);
         } catch (Exception e) {
             throw new SystemException("内部解析异常");
+        }
+        if (sysUserDTO == null) {
+            return null;
         }
         return function.apply(sysUserDTO);
     }
@@ -165,7 +197,7 @@ public class RedisTokenUtil {
         if (userId == null) {
             return;
         }
-        String tokenKey = TOKEN_KEY_PREFIX + buildToken(userId);;
+        String tokenKey = TOKEN_KEY_PREFIX + buildToken(userId);
         stringRedisTemplate.delete(tokenKey);
     }
 

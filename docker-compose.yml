@@ -5,7 +5,8 @@ services:
     image: mysql:8.0
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-me}
+      # 必填：在 .env 中设置（留空时 compose 会直接报错，避免用弱密码启动）
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?请在 .env 中设置 MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-cipherlens}
       TZ: Asia/Shanghai
     command:
@@ -15,7 +16,7 @@ services:
       - mysql-data:/var/lib/mysql
       - ./backend/sql/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-change-me}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD:?请在 .env 中设置 MYSQL_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -46,13 +47,26 @@ services:
       MYSQL_PORT: 3306
       MYSQL_DATABASE: ${MYSQL_DATABASE:-cipherlens}
       MYSQL_USER: root
-      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-me}
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:?请在 .env 中设置 MYSQL_ROOT_PASSWORD}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
-      TOKEN_SECRET_KEY: ${TOKEN_SECRET_KEY:-change-me-in-production}
+      # 必填：Token 签名密钥（至少 16 位），启动时校验
+      TOKEN_SECRET_KEY: ${TOKEN_SECRET_KEY:?请在 .env 中设置 TOKEN_SECRET_KEY}
+      # 华为云 KMS：使用密码解密类功能时必填
       HUAWEI_AK: ${HUAWEI_AK:-}
       HUAWEI_SK: ${HUAWEI_SK:-}
+      HUAWEI_KMS_KEY_ID: ${HUAWEI_KMS_KEY_ID:-}
+      HUAWEI_KMS_REGION: ${HUAWEI_KMS_REGION:-cn-south-1}
+      # 用户 AES 密钥的加密公钥（公钥非敏感，模板中已给出默认值）
+      RSA_PUBLIC_KEY: ${RSA_PUBLIC_KEY:-}
+      # 邮件服务：找回密码验证码需要，留空则该功能不可用
+      MAIL_HOST: ${MAIL_HOST:-}
+      MAIL_PORT: ${MAIL_PORT:-465}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_SSL_ENABLED: ${MAIL_SSL_ENABLED:-true}
+      RESET_CODE_LOG_ENABLED: ${RESET_CODE_LOG_ENABLED:-false}
     ports:
       - "${WEB_API_PORT:-8080}:8080"
     healthcheck:

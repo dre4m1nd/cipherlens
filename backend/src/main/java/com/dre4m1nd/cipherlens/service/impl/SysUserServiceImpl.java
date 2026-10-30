@@ -13,6 +13,7 @@ import com.dre4m1nd.cipherlens.common.crypto.RSA4096Util;
 import com.dre4m1nd.cipherlens.common.model.*;
 import com.dre4m1nd.cipherlens.common.util.RedisTokenUtil;
 import com.dre4m1nd.cipherlens.common.util.UserHolderUtil;
+import com.dre4m1nd.cipherlens.common.util.VerificationCodeService;
 import com.dre4m1nd.cipherlens.exception.BusinessException;
 import com.dre4m1nd.cipherlens.exception.SystemException;
 import com.dre4m1nd.cipherlens.exception.UnAuthorizedException;
@@ -22,6 +23,7 @@ import com.dre4m1nd.cipherlens.model.entity.SysUser;
 import com.dre4m1nd.cipherlens.service.SysUserService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -44,6 +46,13 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
     @Resource
     private StringRedisTemplate stringRedisTemplate;
 
+    @Resource
+    private VerificationCodeService verificationCodeService;
+
+    /** RSA 公钥（对应华为云 KMS 密钥对），用于加密用户 AES 密钥 */
+    @Value("${crypto.rsa.public-key:}")
+    private String rsaPublicKey;
+
     /**
      * 用户登录业务逻辑
      * 
@@ -57,7 +66,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
         // 根据用户名查询用户信息
         SysUser sysUser = lambdaQuery().eq(SysUser::getUsername, loginForm.getUsername()).one();
         if (ObjectUtil.isNull(sysUser)) {
-            log.error("用户不存在: {}", loginForm.getUsername());
+            log.warn("用户不存在: {}", loginForm.getUsername());
             throw new BusinessException("用户不存在");
         }
         // 获取用户密码哈希和盐值
@@ -65,7 +74,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
         String salt = sysUser.getSalt();
         // 验证密码
         if (!PBKDF2Util.verifyPassword(loginForm.getPassword(), userPasswordHash, salt)) {
-            log.error("密码错误: {}", loginForm.getUsername());
+            log.warn("密码错误: {}", loginForm.getUsername());
             throw new BusinessException("密码错误");
         }
         // 设置当前用户ID到线程上下文
@@ -124,7 +133,12 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
         // 生成密码哈希
         sysUser.setUserPasswordHash(PBKDF2Util.generatePasswordHash(registerForm.getPassword(), sysUser.getSalt()));
         // 生成并加密AES密钥
-        sysUser.setAesKeyRsaEncrypted(RSA4096Util.encrypt(AES256GCMUtil.generateAESKey()));
+        try {
+            sysUser.setAesKeyRsaEncrypted(RSA4096Util.encrypt(AES256GCMUtil.generateAESKey(), rsaPublicKey));
+        } catch (IllegalArgumentException e) {
+            log.error("用户密钥加密失败: {}", e.getMessage());
+            throw new SystemException("服务端加密配置缺失，暂时无法注册");
+        }
         // 保存用户信息到数据库
         if (!this.save(sysUser)) {
             throw new SystemException("注册失败");
@@ -133,14 +147,31 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
     }
 
     /**
-     * 重置用户密码业务逻辑
-     * 
-     * @param resetPasswordForm 密码重置表单，包含用户名、邮箱和新密码
+     * 发送重置密码邮箱验证码
+     *
+     * @param resetCodeForm 用户名 + 邮箱
+     * @return 统一提示（不暴露账号是否存在）
+     */
+    @Override
+    public Result<?> sendResetCode(ResetCodeForm resetCodeForm) {
+        SysUser sysUser = this.lambdaQuery()
+                .eq(SysUser::getUsername, resetCodeForm.getUsername())
+                .eq(SysUser::getEmail, resetCodeForm.getEmail())
+                .one();
+        if (ObjectUtil.isNull(sysUser)) {
+            // 不区分“用户不存在”与“邮箱不匹配”，避免账号枚举
+            log.warn("重置密码验证码请求：用户名与邮箱不匹配");
+            return Result.success("如果账号与邮箱匹配，验证码已发送");
+        }
+        verificationCodeService.sendResetCode(sysUser.getUsername(), sysUser.getEmail());
+        return Result.success("如果账号与邮箱匹配，验证码已发送");
+    }
+
+    /**
+     * 重置用户密码业务逻辑（需邮箱验证码）
+     *
+     * @param resetPasswordForm 密码重置表单，包含用户名、邮箱、验证码和新密码
      * @return 密码重置结果
-     * @throws BusinessException 用户不存在时抛出
-     * @throws SystemException 更新密码失败时抛出
-     * @throws NoSuchAlgorithmException 加密算法不存在时抛出
-     * @throws InvalidKeySpecException 密钥规格无效时抛出
      */
     @Override
     @OperationLogRecord(operationType = OperationTypeEnum.UPDATE, operationContent = OperationContentEnum.USER)
@@ -148,12 +179,17 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
         // 根据用户名和邮箱查询用户
         SysUser sysUser = this.lambdaQuery().eq(SysUser::getUsername, resetPasswordForm.getUsername()).eq(SysUser::getEmail, resetPasswordForm.getEmail()).one();
         if (ObjectUtil.isNull(sysUser)) {
-            throw new BusinessException("用户不存在");
+            // 与验证码错误返回同一提示，避免通过接口探测账号
+            throw new BusinessException("验证码错误或已过期");
         }
+        // 校验并消费邮箱验证码
+        verificationCodeService.verifyAndConsume(sysUser.getUsername(), resetPasswordForm.getCode());
         // 生成新密码哈希并更新到数据库
         if (!this.lambdaUpdate().eq(SysUser::getId, sysUser.getId()).setSql("user_password_hash={0}", PBKDF2Util.generatePasswordHash(resetPasswordForm.getPassword(), sysUser.getSalt())).update()) {
             throw new SystemException("更新密码失败");
         }
+        // 密码已变更，使旧登录态立即失效
+        redisTokenUtil.removeToken(sysUser.getId());
         return Result.success("重置密码成功");
     }
 
@@ -189,10 +225,13 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser>
         
         // 更新密码（如果提供）
         if (StrUtil.isNotBlank(password)){
-            // 从Redis获取用户盐值
-            String salt = redisTokenUtil.getFieldByToken(redisTokenUtil.buildToken(userId), SysUserDTO::getSalt);
+            // 盐值直接从数据库读取，不依赖 Redis 中的登录缓存
+            SysUser current = this.getById(userId);
+            if (ObjectUtil.isNull(current)) {
+                throw new BusinessException("用户不存在");
+            }
             // 生成新密码哈希并更新
-            if (!this.lambdaUpdate().eq(SysUser::getId, userId).setSql("user_password_hash={0}", PBKDF2Util.generatePasswordHash(password,salt)).update()){
+            if (!this.lambdaUpdate().eq(SysUser::getId, userId).setSql("user_password_hash={0}", PBKDF2Util.generatePasswordHash(password,current.getSalt())).update()){
                 throw new SystemException("更新密码失败");
             }
         }

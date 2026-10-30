@@ -1,5 +1,6 @@
 package com.dre4m1nd.cipherlens.controller;
 
+import com.dre4m1nd.cipherlens.common.model.PasswordEvaluateForm;
 import com.dre4m1nd.cipherlens.common.model.Result;
 import com.dre4m1nd.cipherlens.model.vo.PasswordEvaluationLogVO;
 import com.dre4m1nd.cipherlens.service.PasswordEvaluationLogService;
@@ -23,15 +24,14 @@ public class EvaluateController {
     private PasswordEvaluationLogService passwordEvaluationLogService;
 
     @Operation(summary = "密码评估接口")
-    @GetMapping()
-    public Result<PasswordEvaluationLogVO> evaluate(@RequestParam String password) {
-        log.info("开始评估:");
-        return passwordEvaluationLogService.evaluate(password);
+    @PostMapping()
+    public Result<PasswordEvaluationLogVO> evaluate(@RequestBody PasswordEvaluateForm form) {
+        // 密码通过请求体传递，避免出现在 URL 与访问日志中
+        return passwordEvaluationLogService.evaluate(form == null ? null : form.getPassword());
     }
     @Operation(summary = "获取评估结果接口")
     @GetMapping("/item/{passwordItemId}")
     public Result<PasswordEvaluationLogVO> getEvaluationLogById(@PathVariable Long passwordItemId) {
-        log.info("开始评估获取评估结果:");
         return passwordEvaluationLogService.getEvaluationLogById(passwordItemId);
     }
 }

@@ -20,6 +20,8 @@ public interface SysUserService extends IService<SysUser> {
 
     Result<?> addUser(RegisterForm registerForm) throws Exception;
 
+    Result<?> sendResetCode(ResetCodeForm resetCodeForm);
+
     Result<?> resetPassword(ResetPasswordForm resetPasswordForm) throws NoSuchAlgorithmException, InvalidKeySpecException;
 
     Result<?> updateSysUser(UpdateUserForm updateUserForm) throws NoSuchAlgorithmException, InvalidKeySpecException;

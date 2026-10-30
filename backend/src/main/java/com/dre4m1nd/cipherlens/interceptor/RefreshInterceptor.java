@@ -3,6 +3,7 @@ package com.dre4m1nd.cipherlens.interceptor;
 import cn.hutool.core.util.StrUtil;
 import com.dre4m1nd.cipherlens.common.util.RedisTokenUtil;
 import com.dre4m1nd.cipherlens.common.util.UserHolderUtil;
+import com.dre4m1nd.cipherlens.exception.UnAuthorizedException;
 import com.dre4m1nd.cipherlens.model.dto.SysUserDTO;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,8 +26,12 @@ public class RefreshInterceptor implements HandlerInterceptor {
         if (StrUtil.isBlank(token)) {
             return true;
         }
-        //无效token,放行
-        if (!redisTokenUtil.isValidToken(token)){
+        //无效token,放行（refresh 拦截器只负责续期，鉴权由 LoginInterceptor 完成）
+        try {
+            if (!redisTokenUtil.isValidToken(token)){
+                return true;
+            }
+        } catch (UnAuthorizedException e) {
             return true;
         }
         Long userId = redisTokenUtil.getFieldByToken(token, SysUserDTO::getId);

@@ -7,7 +7,6 @@ import com.dre4m1nd.cipherlens.common.Enum.OperationContentEnum;
 import com.dre4m1nd.cipherlens.common.Enum.OperationTypeEnum;
 import com.dre4m1nd.cipherlens.common.model.Result;
 import com.dre4m1nd.cipherlens.common.util.UserHolderUtil;
-import com.dre4m1nd.cipherlens.exception.SystemException;
 import com.dre4m1nd.cipherlens.model.entity.OperationLog;
 import com.dre4m1nd.cipherlens.service.OperationLogService;
 import jakarta.annotation.Resource;
@@ -85,15 +84,11 @@ public class OperationLogAspect {
             operationLog.setUserId(ObjectUtil.isNull(userId) ? 0 : userId);
             operationLog.setOperationResult(0);
             operationLog.setCostTime(System.currentTimeMillis() - startTime);
-            if (!operationLogService.save(operationLog)) {
-                throw new SystemException("操作日志保存失败");
-            }
             log.error("操作失败,用户Id:{},操作类型:{},操作目标:{},异常信息:{}",
                     operationLog.getUserId(), operationLog.getOperationType(),
-                    // 补充完整堆栈
                     operationLog.getOperationContent(), e.getMessage(), e);
 
-            // 继续抛出异常，让全局异常处理器捕获
+            // 继续抛出异常，让全局异常处理器捕获（日志统一在 finally 中保存一次，避免重复写入）
             if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
             } else {

@@ -30,9 +30,9 @@ public class OperationLogController {
 
     @Operation(summary = "查询当前用户所有操作日志接口")
     @PostMapping("/list")
-    public Result<IPage<OperationLogVO>> listLogs(@RequestParam Integer pageNum,
-                                                  @RequestParam Integer pageSize,
-                                                  @RequestBody OperationLogQueryDTO operationLogQueryDTO) {
+    public Result<IPage<OperationLogVO>> listLogs(@RequestParam(defaultValue = "1") Integer pageNum,
+                                                  @RequestParam(defaultValue = "10") Integer pageSize,
+                                                  @RequestBody(required = false) OperationLogQueryDTO operationLogQueryDTO) {
         PageQueryDTO pageQueryDTO = new PageQueryDTO(pageNum, pageSize);
         if (operationLogQueryDTO == null) {
             operationLogQueryDTO = new OperationLogQueryDTO();

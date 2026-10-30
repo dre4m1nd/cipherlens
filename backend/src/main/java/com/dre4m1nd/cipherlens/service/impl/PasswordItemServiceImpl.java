@@ -15,10 +15,10 @@ import com.dre4m1nd.cipherlens.common.crypto.AES256GCMUtil;
 import com.dre4m1nd.cipherlens.common.Enum.OperationTypeEnum;
 import com.dre4m1nd.cipherlens.common.model.Result;
 import com.dre4m1nd.cipherlens.common.util.HuaweiKmsUtil;
-import com.dre4m1nd.cipherlens.common.util.RedisTokenUtil;
 import com.dre4m1nd.cipherlens.common.util.UserHolderUtil;
 import com.dre4m1nd.cipherlens.exception.BusinessException;
 import com.dre4m1nd.cipherlens.exception.SystemException;
+import com.dre4m1nd.cipherlens.exception.UnAuthorizedException;
 import com.dre4m1nd.cipherlens.mapper.PasswordItemMapper;
 import com.dre4m1nd.cipherlens.model.dto.PageQueryDTO;
 import com.dre4m1nd.cipherlens.model.dto.PasswordItemDTO;
@@ -53,8 +53,6 @@ public class PasswordItemServiceImpl extends ServiceImpl<PasswordItemMapper, Pas
     @Resource
     private StringRedisTemplate stringRedisTemplate;
     @Resource
-    private RedisTokenUtil redisTokenUtil;
-    @Resource
     private SysUserService sysUserService;
     @Resource
     private PasswordEvaluationLogService passwordEvaluationLogService;
@@ -68,13 +66,15 @@ public class PasswordItemServiceImpl extends ServiceImpl<PasswordItemMapper, Pas
             throw new BusinessException("密码条目不能为空");
         }
         PasswordItem passwordItem = BeanUtil.copyProperties(passwordItemDTO, PasswordItem.class);
+        passwordItem.setId(null);
         passwordItem.setUserId(userId);
-        String aesKey = this.getAesKey();
-        passwordItem.setPassword(AES256GCMUtil.encrypt(passwordItem.getPassword(), aesKey));
+        // 明文仅用于评估，落库前先加密
+        String plainPassword = passwordItem.getPassword();
+        passwordItem.setPassword(AES256GCMUtil.encrypt(plainPassword, this.getAesKey()));
         if (!this.save(passwordItem)) {
             throw new SystemException("添加密码条目失败");
         }
-        if (!passwordEvaluationLogService.save(passwordEvaluationLogService.evaluateWithPasswordId(passwordItem.getId(), passwordItem.getPassword()))) {
+        if (!passwordEvaluationLogService.save(passwordEvaluationLogService.evaluateWithPasswordId(passwordItem.getId(), plainPassword))) {
             throw new SystemException("添加密码安全评估记录失败");
         }
         return Result.success();
@@ -84,12 +84,19 @@ public class PasswordItemServiceImpl extends ServiceImpl<PasswordItemMapper, Pas
     @Override
     @OperationLogRecord(operationType = OperationTypeEnum.DELETE, operationContent = OperationContentEnum.PASSWORD_ITEM)
     public Result<?> removePasswordItem(Long id) {
-        if (!this.removeById(id)) {
-            throw new SystemException("删除密码条目失败");
+        if (id == null) {
+            throw new BusinessException("密码条目ID不能为空");
         }
-        if (!passwordEvaluationLogService.remove(new LambdaQueryWrapper<>(PasswordEvaluationLog.class).eq(PasswordEvaluationLog::getPasswordItemId, id))) {
-            throw new SystemException("删除密码安全评估记录失败");
+        // 带上 userId 条件，防止越权删除他人数据
+        boolean removed = this.remove(new LambdaQueryWrapper<PasswordItem>()
+                .eq(PasswordItem::getId, id)
+                .eq(PasswordItem::getUserId, UserHolderUtil.get()));
+        if (!removed) {
+            throw new BusinessException("密码条目不存在");
         }
+        passwordEvaluationLogService.remove(new LambdaQueryWrapper<>(PasswordEvaluationLog.class)
+                .eq(PasswordEvaluationLog::getPasswordItemId, id));
+        stringRedisTemplate.delete(this.cacheKey(id));
         return Result.success();
     }
 
@@ -101,22 +108,34 @@ public class PasswordItemServiceImpl extends ServiceImpl<PasswordItemMapper, Pas
         if (ObjectUtil.isNull(passwordItemDTO)) {
             throw new BusinessException("密码条目不能为空");
         }
-        log.info("更新密码:{}", id);
         PasswordItem passwordItem = this.lambdaQuery().eq(PasswordItem::getId, id).eq(PasswordItem::getUserId, userId).one();
         if (ObjectUtil.isNull(passwordItem)) {
             throw new BusinessException("密码条目不存在");
         }
-        BeanUtil.copyProperties(passwordItemDTO, passwordItem, CopyOptions.create().ignoreNullValue());
+        // 密码单独处理：为空表示不修改，非空才加密
+        String plainPassword = passwordItemDTO.getPassword();
+        BeanUtil.copyProperties(passwordItemDTO, passwordItem,
+                CopyOptions.create().ignoreNullValue()
+                        .setIgnoreProperties("id", "userId", "password"));
+        boolean passwordChanged = StrUtil.isNotBlank(plainPassword);
+        if (passwordChanged) {
+            try {
+                passwordItem.setPassword(AES256GCMUtil.encrypt(plainPassword, this.getAesKey()));
+            } catch (Exception e) {
+                throw new SystemException("密码加密失败");
+            }
+        }
         if (!this.updateById(passwordItem)) {
             throw new SystemException("更新密码条目失败");
         }
-        if (passwordEvaluationLogService.remove(new LambdaQueryWrapper<>(PasswordEvaluationLog.class).eq(PasswordEvaluationLog::getPasswordItemId, id))) {
-            throw new SystemException("删除密码安全评估记录失败");
+        if (passwordChanged) {
+            passwordEvaluationLogService.remove(new LambdaQueryWrapper<>(PasswordEvaluationLog.class)
+                    .eq(PasswordEvaluationLog::getPasswordItemId, id));
+            if (!passwordEvaluationLogService.save(passwordEvaluationLogService.evaluateWithPasswordId(id, plainPassword))) {
+                throw new SystemException("添加密码安全评估记录失败");
+            }
         }
-        if (!passwordEvaluationLogService.save(passwordEvaluationLogService.evaluateWithPasswordId(passwordItem.getId(), passwordItem.getPassword()))) {
-            throw new SystemException("添加密码安全评估记录失败");
-        }
-        stringRedisTemplate.delete(PASSWORD_ITEM_KEY_PREFIX + id);
+        stringRedisTemplate.delete(this.cacheKey(id));
         return Result.success();
     }
 
@@ -125,7 +144,9 @@ public class PasswordItemServiceImpl extends ServiceImpl<PasswordItemMapper, Pas
         if (ObjectUtil.isNull(id)){
             throw new BusinessException("密码条目ID不能为空");
         }
-        String jsonStr = stringRedisTemplate.opsForValue().get(PASSWORD_ITEM_KEY_PREFIX + id);
+        // 缓存 key 必须带 userId，避免多用户共享同一条目缓存造成越权读取
+        String cacheKey = this.cacheKey(id);
+        String jsonStr = stringRedisTemplate.opsForValue().get(cacheKey);
         if (StrUtil.isNotBlank(jsonStr)) {
             return Result.success(JSONUtil.toBean(jsonStr, PasswordItemVO.class));
         }
@@ -134,11 +155,11 @@ public class PasswordItemServiceImpl extends ServiceImpl<PasswordItemMapper, Pas
         }
         PasswordItem passwordItem = this.lambdaQuery().eq(PasswordItem::getId, id).eq(PasswordItem::getUserId, UserHolderUtil.get()).one();
         if (ObjectUtil.isNull(passwordItem)) {
-            stringRedisTemplate.opsForValue().set(PASSWORD_ITEM_KEY_PREFIX + id, "", NULL_VALUE_TTL, TimeUnit.MINUTES);
+            stringRedisTemplate.opsForValue().set(cacheKey, "", NULL_VALUE_TTL, TimeUnit.MINUTES);
             throw new BusinessException("密码条目不存在");
         }
         PasswordItemVO passwordItemVO = BeanUtil.copyProperties(passwordItem, PasswordItemVO.class);
-        stringRedisTemplate.opsForValue().set(PASSWORD_ITEM_KEY_PREFIX + id, JSONUtil.toJsonStr(passwordItemVO), PASSWORD_ITEM_TTL, TimeUnit.MINUTES);
+        stringRedisTemplate.opsForValue().set(cacheKey, JSONUtil.toJsonStr(passwordItemVO), PASSWORD_ITEM_TTL, TimeUnit.MINUTES);
         return Result.success(passwordItemVO);
     }
 
@@ -179,20 +200,28 @@ public class PasswordItemServiceImpl extends ServiceImpl<PasswordItemMapper, Pas
 
     private String getAesKey() {
         Long userId = UserHolderUtil.get();
-        String key = stringRedisTemplate.opsForValue().get(AES_KEY_PREFIX + redisTokenUtil.buildToken(userId));
-        if (StrUtil.isNotBlank(key)){
+        if (userId == null) {
+            throw new UnAuthorizedException("用户未登录");
+        }
+        String cacheKey = AES_KEY_PREFIX + userId;
+        String key = stringRedisTemplate.opsForValue().get(cacheKey);
+        if (StrUtil.isNotBlank(key)) {
             return key;
         }
-        if (key != null){
-            return null;
+        SysUser sysUser = sysUserService.getById(userId);
+        if (sysUser == null || StrUtil.isBlank(sysUser.getAesKeyRsaEncrypted())) {
+            throw new SystemException("用户密钥不存在，请联系管理员");
         }
-        String aesKeyRsaEncrypted = sysUserService.lambdaQuery().eq(SysUser::getId, userId).one().getAesKeyRsaEncrypted();
-        if (aesKeyRsaEncrypted == null) {
-            stringRedisTemplate.opsForValue().set(AES_KEY_PREFIX + userId, "", NULL_VALUE_TTL, TimeUnit.MINUTES);
-        }
-        key = HuaweiKmsUtil.decrypt(aesKeyRsaEncrypted);
-        stringRedisTemplate.opsForValue().set(AES_KEY_PREFIX + userId, key, AES_KEY_TTL, TimeUnit.MINUTES);
+        key = HuaweiKmsUtil.decrypt(sysUser.getAesKeyRsaEncrypted());
+        stringRedisTemplate.opsForValue().set(cacheKey, key, AES_KEY_TTL, TimeUnit.MINUTES);
         return key;
+    }
+
+    /**
+     * 密码条目缓存 key（按用户隔离）
+     */
+    private String cacheKey(Long id) {
+        return PASSWORD_ITEM_KEY_PREFIX + UserHolderUtil.get() + ":" + id;
     }
 }
 

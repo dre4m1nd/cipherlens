@@ -61,7 +61,9 @@ cd backend
 mvn spring-boot:run
 ```
 
-数据库与 Redis 连接在 `src/main/resources/application-dev.yml` 中配置。
+数据库与 Redis 连接在 `src/main/resources/application-dev.yml` 中配置；
+华为云 KMS（`huawei.kms.key-id/region`）、RSA 公钥（`crypto.rsa.public-key`）也在该文件，
+本地未配置 KMS AK/SK 时仅“注册 / 查看密码明文”不可用；找回密码验证码默认打印到后端日志（`security.reset.code-log-enabled: true`）。
 
 ### 前端（端口 3001）
 
@@ -95,8 +97,9 @@ cd backend && mvn clean package -DskipTests
 使用 Docker Compose 编排 MySQL 8 + Redis 7 + 后端 + 前端（Nginx 托管 `dist` 并反代 `/api`）。
 
 ```bash
-# 1. 可选：复制环境变量模板
+# 1. 复制环境变量模板（必须：MYSQL_ROOT_PASSWORD 与 TOKEN_SECRET_KEY 留空时 compose 会直接报错）
 cp .env.example .env
+# 编辑 .env，至少填写 MYSQL_ROOT_PASSWORD、TOKEN_SECRET_KEY（openssl rand -base64 32）
 
 # 2. 构建并启动（首次会下载镜像、编译后端、打包前端，请耐心等待）
 docker compose up -d --build
@@ -111,7 +114,8 @@ docker compose logs -f backend
 
 - **数据库**：`backend/sql/init.sql` 在 MySQL 卷为空时自动建库建表并写入弱密码种子；它只跑一次（删 `mysql-data` 卷可重置）。
 - **接口前缀**：前端请求走 `/api`，Nginx 在 `frontend/nginx.conf` 中去掉 `/api` 前缀转发到 `backend:8080`（后端无 context-path）。
-- **生产配置**：后端以 `prod` 环境启动，数据库连接、Redis、Token 密钥、华为云 KMS 均通过环境变量注入（见 `application-prod.yml` 与 `.env.example`）。
+- **生产配置**：后端以 `prod` 环境启动，数据库连接、Redis、Token 密钥、华为云 KMS、RSA 公钥、邮件服务均通过环境变量注入（见 `application-prod.yml` 与 `.env.example`）。
 - **健康检查**：后端暴露 `/actuator/health`（仅 health，无详情），已加入 Docker 健康检查；前端 `depends_on` 后端 healthy 后才启动，避免启动期 502。
-- **Token 秘钥**：`TOKEN_SECRET_KEY` 生产环境务必改成随机长字符串，否则有安全风险。
-- **华为云 KMS**：仅在使用 KMS 解密类功能时需要 `HUAWEI_AK` / `HUAWEI_SK`，否则留空。
+- **Token 秘钥**：`TOKEN_SECRET_KEY` 必填且至少 16 位，后端启动时会校验；`MYSQL_ROOT_PASSWORD` 同样为必填，不再提供弱默认值。
+- **华为云 KMS**：`HUAWEI_AK` / `HUAWEI_SK` 仅在使用 KMS 解密类功能时需要；`HUAWEI_KMS_KEY_ID` 与 `RSA_PUBLIC_KEY` 必须成对（同一密钥对），换密钥只需改环境变量，无需改代码。
+- **密码找回**：`POST /user/reset/code` 发送邮箱验证码（Redis 存 5 分钟、60 秒冷却、最多 5 次校验），`POST /user/reset` 需带 `code`；重置成功后旧 token 立即失效。需要配置 `MAIL_HOST` / `MAIL_PORT` / `MAIL_USERNAME` / `MAIL_PASSWORD`，未配置时该接口返回明确提示；仅本地可用 `RESET_CODE_LOG_ENABLED=true` 把验证码打到日志。

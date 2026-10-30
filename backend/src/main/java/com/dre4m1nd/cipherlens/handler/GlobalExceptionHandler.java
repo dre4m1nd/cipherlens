@@ -47,15 +47,15 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Result<?> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
         String errorMessage = buildValidationErrorMessage(e.getBindingResult());
-        log.warn("参数验证异常: {}", errorMessage,e);
-        return Result.error(500,errorMessage);
+        log.warn("参数验证异常: {}", errorMessage);
+        return Result.error(400, errorMessage);
     }
 
     @ExceptionHandler(BindException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Result<?> handleBindException(BindException e) {
         String errorMessage = buildValidationErrorMessage(e.getBindingResult());
-        log.warn("参数验证异常: {}", errorMessage,e);
+        log.warn("参数验证异常: {}", errorMessage);
         return Result.error(400,errorMessage);
     }
 
@@ -63,8 +63,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(SQLException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Result<?> handleSQLException(SQLException e) {
-        log.warn("数据库操作异常: {}", e.getMessage(),e);
-        return Result.error(500,StrUtil.isNotBlank(e.getMessage())?e.getMessage():"数据库异常");
+        log.error("数据库操作异常: {}", e.getMessage(), e);
+        // 不向客户端暴露 SQL / 堆栈细节
+        return Result.error(500, "数据库异常，请稍后重试");
     }
 
 
@@ -93,8 +94,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Result<?> handleException(Exception e) {
-        log.error("系统异常: {}", e.getMessage(),e);
-        return Result.error(500,StrUtil.isNotBlank(e.getMessage())?e.getMessage():"系统异常");
+        log.error("系统异常: {}", e.getMessage(), e);
+        // 未知异常统一返回笼统提示，避免泄露内部实现细节
+        return Result.error(500, "系统异常，请稍后重试");
     }
 
 }

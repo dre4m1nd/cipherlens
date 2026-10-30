@@ -4,17 +4,12 @@ import cn.hutool.core.util.StrUtil;
 import com.dre4m1nd.cipherlens.common.util.RedisTokenUtil;
 import com.dre4m1nd.cipherlens.common.util.UserHolderUtil;
 import com.dre4m1nd.cipherlens.exception.UnAuthorizedException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 
 @Slf4j
@@ -23,8 +18,6 @@ public class LoginInterceptor implements HandlerInterceptor {
 
     @Resource
     private RedisTokenUtil redisTokenUtil;
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     // 检测是否登录
     @Override
@@ -40,6 +33,12 @@ public class LoginInterceptor implements HandlerInterceptor {
         userId = redisTokenUtil.getUserId(token);
         UserHolderUtil.set(userId);
         return true;
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
+        // 线程池复用线程，务必清理 ThreadLocal
+        UserHolderUtil.remove();
     }
 
 }

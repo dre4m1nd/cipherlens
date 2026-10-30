@@ -66,7 +66,15 @@ public class PasswordEvaluationLogServiceImpl extends ServiceImpl<PasswordEvalua
         if (ObjectUtil.isNull(passwordItemId)) {
             throw new BusinessException("密码项ID不能为空");
         }
-        PasswordEvaluationLog passwordEvaluationLog = this.lambdaQuery().eq(PasswordEvaluationLog::getPasswordItemId, passwordItemId).one();
+        Long userId = UserHolderUtil.get();
+        if (userId == null) {
+            throw new UnAuthorizedException("用户未登录");
+        }
+        // 同时限定 userId，防止越权查看他人评估记录
+        PasswordEvaluationLog passwordEvaluationLog = this.lambdaQuery()
+                .eq(PasswordEvaluationLog::getPasswordItemId, passwordItemId)
+                .eq(PasswordEvaluationLog::getUserId, userId)
+                .one();
         if (ObjectUtil.isNull(passwordEvaluationLog)) {
             throw new BusinessException("密码安全评估记录不存在");
         }

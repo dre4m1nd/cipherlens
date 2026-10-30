@@ -42,7 +42,13 @@ public class SysUserController {
         return sysUserService.addUser(registerForm);
     }
 
-    @Operation(summary = "重置密码接口")
+    @Operation(summary = "发送重置密码验证码接口")
+    @PostMapping("/reset/code")
+    public Result<?> sendResetCode(@Validated @RequestBody ResetCodeForm resetCodeForm) {
+        return sysUserService.sendResetCode(resetCodeForm);
+    }
+
+    @Operation(summary = "重置密码接口（需邮箱验证码）")
     @PostMapping("/reset")
     public Result<?> resetPassword(@Validated @RequestBody ResetPasswordForm resetPasswordForm) throws Exception {
         return sysUserService.resetPassword(resetPasswordForm);

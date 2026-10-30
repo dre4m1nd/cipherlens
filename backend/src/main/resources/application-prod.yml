@@ -7,13 +7,29 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://${MYSQL_HOST:mysql}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:cipherlens}?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
     username: ${MYSQL_USER:root}
-    password: ${MYSQL_PASSWORD:123456}
+    password: ${MYSQL_PASSWORD:}
   data:
     redis:
       host: ${REDIS_HOST:redis}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
       timeout: 3000ms
+  # 邮件服务（找回密码验证码）。MAIL_HOST 留空时验证码邮件不可用
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: ${MAIL_SSL_ENABLED:true}
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
 
 mybatis-plus:
   mapper-locations: classpath*:/mapper/*.xml
@@ -34,12 +50,28 @@ springdoc:
 knife4j:
   enable: ${API_DOCS_ENABLED:false}
 
+# 华为云 KMS：AK/SK、密钥 ID 均从环境变量注入
 huawei:
   ak: ${HUAWEI_AK:}
   sk: ${HUAWEI_SK:}
+  kms:
+    key-id: ${HUAWEI_KMS_KEY_ID:}
+    region: ${HUAWEI_KMS_REGION:cn-south-1}
+    algorithm: ${HUAWEI_KMS_ALGORITHM:RSAES_OAEP_SHA_256}
+
+crypto:
+  rsa:
+    # RSA-4096 公钥（Base64），用于加密用户 AES 密钥；未配置时无法注册新用户
+    public-key: ${RSA_PUBLIC_KEY:}
+
+security:
+  reset:
+    # 仅用于本地/测试环境：未配置 SMTP 时把验证码打印到日志
+    code-log-enabled: ${RESET_CODE_LOG_ENABLED:false}
 
 token:
-  secret-key: ${TOKEN_SECRET_KEY:change-me-in-production}
+  # 必填：随机长字符串（至少 16 位），启动时校验
+  secret-key: ${TOKEN_SECRET_KEY:}
 
 management:
   endpoints:

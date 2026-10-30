@@ -33,24 +33,27 @@ public final class RSA4096Util {
     private static final String OAEP_HASH_ALGORITHM = "SHA-256";
     /** OAEP参数 - 掩码生成函数（匹配KMS的MGF1） */
     private static final String OAEP_MGF_ALGORITHM = "MGF1";
-    /** 公钥 Base64 编码*/
-    public static final String PUBLIC_KEY_BASE64 = "MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEArxgcaiCCHlvNWMbOfK3DDzpQNsEjBGBU4p39aHnip41DEZWtjGULnFbyFpazMOdPmxj992v72Ujs4Lqmho91r6WCYQL8PhWSNY9a2lRCcXTwF97tOI3uhC1Dr/QDiw6a8H77IrLHgXXPC9emW8Y1Z1owNIPgSzWKQB3dNHHydzBSzt8X7CnVLgMkYU+u3O39j9UUNiEk2PmS8NdvI6rtEMZHyskzGxrbxdVfGUu0tM1r2gYe5F8qAbGoW9cBtSsOV0WQK+Hg60S/mjlGR3sXAvl3nOlpg70myBqbJ12UplzDAdWrJjN4fKNWlLsCbj4UgdQRIh2++tOH5lwxNc+gNRWifb0ghBv5DvuyrAphRhFXd0mAvRjFqHUIcw+wdflJkhv7rwOsuuWa5lwr6cg1cXLL+o5cFlJFBiCWNIPJbOvPXLTPurC3MjHkUy9yPFhvqYb7a3RVAXehfB1E1gViMWyiaR64BddlH2W8vCBJEC5v+yajKpkpUJ9+2B25ORpULLKNlZ1/FxuyYYDup9iCNtVP07f+++k/9mQyQGpZVU20kVdjA5RE+MOkB9M+w8ZDCdeHObJUhJsDPqOx3RmcKBRRCa7twdxKLOvzGJteoP6CCNc16oX3wAAWt932o3tL5PzmXqnHVQo56V+VQppSL+gw5YmlvM5XLi723/ntWj8CAwEAAQ==";
     // -------------------------- 核心静态方法 --------------------------
 
     /**
      * 用RSA公钥加密数据（适配加密用户AES密钥场景，兼容华为云KMS的RSAES_OAEP_SHA_256）
      * @param plainText 明文（如用户AES密钥，Base64编码）
+     * @param publicKeyBase64 Base64 编码的 RSA 公钥（来自配置 crypto.rsa.public-key）
      * @return Base64编码的密文
      * @throws Exception 加密失败
      */
-    public static String encrypt(String plainText) throws Exception {
+    public static String encrypt(String plainText, String publicKeyBase64) throws Exception {
         // 参数校验
         if (plainText == null || plainText.isBlank()) {
             throw new IllegalArgumentException("明文内容不能为空");
         }
 
+        if (publicKeyBase64 == null || publicKeyBase64.isBlank()) {
+            throw new IllegalArgumentException("未配置 RSA 公钥（crypto.rsa.public-key）");
+        }
+
         // 1. 解码Base64公钥
-        byte[] publicKeyBytes = Base64.getDecoder().decode(PUBLIC_KEY_BASE64);
+        byte[] publicKeyBytes = Base64.getDecoder().decode(publicKeyBase64);
         X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(publicKeyBytes);
         KeyFactory keyFactory = KeyFactory.getInstance(RSA_ALGORITHM);
         PublicKey publicKey = keyFactory.generatePublic(publicKeySpec);
@@ -118,15 +121,8 @@ public final class RSA4096Util {
      * @throws Exception 读取/解析失败
      */
     public static String readPublicKeyFromPem(String pemFilePath) throws Exception {
-        // 读取PEM文件内容
         String pemContent = new String(Files.readAllBytes(Paths.get(pemFilePath)), StandardCharsets.UTF_8);
-
-        // 去除PEM文件的头部、尾部和所有空白字符
-        pemContent = pemContent.replace("-----BEGIN PUBLIC KEY-----", "")
-                .replace("-----END PUBLIC KEY-----", "")
-                .replaceAll("\\s+", "");
-
-        return pemContent;
+        return stripPem(pemContent, "PUBLIC KEY");
     }
 
     /**
@@ -136,15 +132,22 @@ public final class RSA4096Util {
      * @throws Exception 读取/解析失败
      */
     public static String readPrivateKeyFromPem(String pemFilePath) throws Exception {
-        // 读取PEM文件内容
         String pemContent = new String(Files.readAllBytes(Paths.get(pemFilePath)), StandardCharsets.UTF_8);
+        return stripPem(pemContent, "PRIVATE KEY");
+    }
 
-        // 去除PEM文件的头部、尾部和所有空白字符
-        pemContent = pemContent.replace("-----BEGIN RSA PRIVATE KEY-----", "")
-                .replace("-----END RSA PRIVATE KEY-----", "")
+    /**
+     * 去掉 PEM 头尾标记与所有空白字符，得到纯 Base64 内容
+     * @param pemContent PEM 文本
+     * @param type 密钥类型（PUBLIC KEY / PRIVATE KEY）
+     * @return Base64 字符串
+     */
+    private static String stripPem(String pemContent, String type) {
+        String boundary = "-----";
+        return pemContent
+                .replace(boundary + "BEGIN " + type + boundary, "")
+                .replace(boundary + "END " + type + boundary, "")
                 .replaceAll("\\s+", "");
-
-        return pemContent;
     }
 
     /**

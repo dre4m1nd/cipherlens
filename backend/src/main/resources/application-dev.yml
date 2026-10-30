@@ -36,10 +36,26 @@ knife4j:
   setting:
     language: zh_cn
 
+# 华为云 KMS：本地开发不配 AK/SK 时，注册/密码解密相关功能不可用
 huawei:
   ak:
   sk:
+  kms:
+    key-id: fe7c0e06-381f-4d29-be61-f161e2d67225
+    region: cn-south-1
+    algorithm: RSAES_OAEP_SHA_256
+
+# 加密相关配置
+crypto:
+  rsa:
+    # RSA-4096 公钥（Base64，对应华为云 KMS 密钥对），用于加密用户 AES 密钥
+    public-key: 'MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEArxgcaiCCHlvNWMbOfK3DDzpQNsEjBGBU4p39aHnip41DEZWtjGULnFbyFpazMOdPmxj992v72Ujs4Lqmho91r6WCYQL8PhWSNY9a2lRCcXTwF97tOI3uhC1Dr/QDiw6a8H77IrLHgXXPC9emW8Y1Z1owNIPgSzWKQB3dNHHydzBSzt8X7CnVLgMkYU+u3O39j9UUNiEk2PmS8NdvI6rtEMZHyskzGxrbxdVfGUu0tM1r2gYe5F8qAbGoW9cBtSsOV0WQK+Hg60S/mjlGR3sXAvl3nOlpg70myBqbJ12UplzDAdWrJjN4fKNWlLsCbj4UgdQRIh2++tOH5lwxNc+gNRWifb0ghBv5DvuyrAphRhFXd0mAvRjFqHUIcw+wdflJkhv7rwOsuuWa5lwr6cg1cXLL+o5cFlJFBiCWNIPJbOvPXLTPurC3MjHkUy9yPFhvqYb7a3RVAXehfB1E1gViMWyiaR64BddlH2W8vCBJEC5v+yajKpkpUJ9+2B25ORpULLKNlZ1/FxuyYYDup9iCNtVP07f+++k/9mQyQGpZVU20kVdjA5RE+MOkB9M+w8ZDCdeHObJUhJsDPqOx3RmcKBRRCa7twdxKLOvzGJteoP6CCNc16oX3wAAWt932o3tL5PzmXqnHVQo56V+VQppSL+gw5YmlvM5XLi723/ntWj8CAwEAAQ=='
+
+security:
+  reset:
+    # 本地未配置 SMTP 时，把找回密码验证码打印到日志（生产环境必须为 false）
+    code-log-enabled: true
 
 token:
-  secret-key: qoreqworndfsao
-
+  # 本地开发密钥，生产环境请用 TOKEN_SECRET_KEY 注入随机值
+  secret-key: dev-token-secret-key-0123456789
