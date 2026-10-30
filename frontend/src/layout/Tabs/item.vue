@@ -3,8 +3,24 @@
     <router-link :to="{ path: menu.path, query: menu.query }" v-if="menu.meta.title">
       {{ menu.meta.title }}
     </router-link>
-    <el-icon @click.stop="reload" v-if="active"><refresh-right /></el-icon>
-    <el-icon @click.stop="closeTab" v-if="!menu.meta.hideClose" alt="del"><close /></el-icon>
+    <button
+        v-if="active"
+        type="button"
+        class="tab-btn"
+        :aria-label="'刷新 ' + menu.meta.title"
+        @click.stop="reload"
+    >
+      <el-icon aria-hidden="true"><refresh-right /></el-icon>
+    </button>
+    <button
+        v-if="!menu.meta.hideClose"
+        type="button"
+        class="tab-btn"
+        :aria-label="'关闭 ' + menu.meta.title"
+        @click.stop="closeTab"
+    >
+      <el-icon aria-hidden="true"><close /></el-icon>
+    </button>
   </div>
 </template>
 
@@ -79,6 +95,21 @@ export default defineComponent({
     .el-icon-refresh-right {
       display: inline-block;
       margin-right: 5px;
+    }
+    .tab-btn {
+      display: inline-flex;
+      align-items: center;
+      background: none;
+      border: none;
+      padding: 0;
+      margin-left: 4px;
+      cursor: pointer;
+      color: inherit;
+    }
+    .tab-btn:focus-visible {
+      outline: 2px solid var(--system-primary-color);
+      outline-offset: 1px;
+      border-radius: 2px;
     }
     .el-icon-close {
       display: inline-block;

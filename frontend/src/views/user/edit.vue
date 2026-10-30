@@ -6,15 +6,15 @@
           <span>修改用户信息</span>
         </div>
       </template>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" @submit.prevent="submitForm(formRef)">
         <el-form-item label="用户名" prop="username">
-          <el-input v-model="form.username" placeholder="请输入用户名" maxlength="50" />
+          <el-input v-model="form.username" name="username" autocomplete="username" spellcheck="false" placeholder="请输入用户名" maxlength="50" />
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input v-model="form.password" type="password" placeholder="请输入密码（不修改请保持为空）" maxlength="100" />
+          <el-input v-model="form.password" type="password" name="new-password" autocomplete="new-password" placeholder="请输入密码（不修改请保持为空）" maxlength="64" show-password />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="submitForm(formRef)">提交</el-button>
+          <el-button type="primary" native-type="submit">提交</el-button>
           <el-button @click="handleCancel">取消</el-button>
         </el-form-item>
       </el-form>
@@ -40,8 +40,7 @@ export default defineComponent({
         { max: 50, message: '用户名不能超过50个字符', trigger: 'blur' }
       ],
       password: [
-        { min: 6, message: '密码不能少于6个字符', trigger: 'blur' },
-        { max: 100, message: '密码不能超过100个字符', trigger: 'blur' }
+        { min: 8, max: 64, message: '密码长度需在 8~64 位之间', trigger: 'blur' }
       ]
     })
 

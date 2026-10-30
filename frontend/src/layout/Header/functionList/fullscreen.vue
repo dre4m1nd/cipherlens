@@ -1,7 +1,17 @@
 <template>
-  <div :title="isFullscreen ? '退出全屏' : '全屏'">
-    <i class="sfont cursor-pointer text-[18px] focus:outline-none" :class="isFullscreen ? 'system-quanping':'system-quanping1'" @click="toggle"></i>
-  </div>
+  <button
+      type="button"
+      class="icon-btn"
+      :aria-label="isFullscreen ? '退出全屏' : '进入全屏'"
+      :title="isFullscreen ? '退出全屏' : '进入全屏'"
+      @click="toggle"
+  >
+    <i
+        class="sfont text-[18px]"
+        :class="isFullscreen ? 'system-quanping' : 'system-quanping1'"
+        aria-hidden="true"
+    ></i>
+  </button>
 </template>
 
 <script>
@@ -21,5 +31,20 @@ export default defineComponent({
 </script>
 
 <style scoped>
-/* 样式已通过WindiCSS类名实现 */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+}
+
+.icon-btn:focus-visible {
+  outline: 2px solid var(--system-primary-color);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
 </style>

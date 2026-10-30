@@ -2,9 +2,15 @@
   <header>
     <div class="left-box">
       <!-- 收缩按钮 -->
-      <div class="menu-icon" @click="opendStateChange">
-        <i class="sfont head-fold" :class="isCollapse ? 'system-s-unfold' : 'system-s-fold'" ></i>
-      </div>
+      <button
+          type="button"
+          class="menu-icon"
+          :aria-label="isCollapse ? '展开侧边栏' : '收起侧边栏'"
+          :aria-expanded="!isCollapse"
+          @click="opendStateChange"
+      >
+        <i class="sfont head-fold" :class="isCollapse ? 'system-s-unfold' : 'system-s-fold'" aria-hidden="true"></i>
+      </button>
       <Breadcrumb />
     </div>
     <div class="right-box">
@@ -19,8 +25,8 @@
       <div class="user-info">
         <el-dropdown>
           <span class="el-dropdown-link">
-            后台管理系统
-            <i class="sfont system-xiala"></i>
+            {{ userName }}
+            <i class="sfont system-xiala" aria-hidden="true"></i>
           </span>
           <template #dropdown>
             <el-dropdown-menu>
@@ -57,6 +63,10 @@ export default defineComponent({
     const router = useRouter()
     const route = useRoute()
     const isCollapse = computed(() => store.state.app.isCollapse)
+    const userName = computed(() => {
+      const info = store.state.user.info || {}
+      return info.username || '未登录'
+    })
     // isCollapse change to hide/show the sidebar
     const opendStateChange = () => {
       store.commit('app/isCollapseChange', !isCollapse.value)
@@ -80,7 +90,9 @@ export default defineComponent({
     
     return {
       isCollapse,
+      userName,
       opendStateChange,
+      handleEditInfo,
       loginOut
     }
   }
@@ -113,6 +125,14 @@ header {
   font-weight: 100;
   cursor: pointer;
   margin-right: 10px;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.left-box .menu-icon:focus-visible {
+  outline: 2px solid var(--system-primary-color);
+  outline-offset: -2px;
 }
 
 .left-box .menu-icon:hover {

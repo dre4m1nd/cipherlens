@@ -10,7 +10,7 @@ const state = () => ({
   theme: {
     state: {
       style: 'default',
-      primaryColor: '#409eff',
+      primaryColor: '#0f766e',
       menuType: 'side'
     }
   },

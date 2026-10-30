@@ -35,10 +35,19 @@ export function updateUserApi(data) {
   })
 }
 
-/** 重置密码Api */
+/** 重置密码Api（需邮箱验证码） */
 export function resetPasswordApi(data) {
   return request({
     url: '/user/reset',
+    method: 'post',
+    data
+  })
+}
+
+/** 发送重置密码验证码Api */
+export function sendResetCodeApi(data) {
+  return request({
+    url: '/user/reset/code',
     method: 'post',
     data
   })

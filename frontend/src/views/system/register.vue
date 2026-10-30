@@ -1,82 +1,126 @@
 <template>
-  <div class="relative w-screen h-screen bg-white bg-center bg-no-repeat bg-cover overflow-hidden cursor-pointer select-none">
-    <div class="w-[1160px] flex absolute left-1/2 top-1/2 bg-white rounded-md transform -translate-x-1/2 -translate-y-1/2 h-[440px] overflow-hidden shadow-[0_6px_20px_5px_rgba(152,152,152,0.1),0_16px_24px_2px_rgba(117,117,117,0.14)]">
-      <div class="relative hidden lg:block">
-        <img :src="loginLeftPng" class="h-[440px]"/>
-        <div class="absolute left-0 top-0 w-full h-full bg-gradient-to-r from-[rgba(0,204,222,0.8)] to-[rgba(51,132,224,0.8)] text-center text-white text-[1.8rem] flex items-center justify-center flex-col tracking-[2px]">
-          <div class="text-[3.5rem] mb-4">{{ systemTitle }}</div>
-          <div>{{ systemSubTitle }}</div>
+  <div class="w-full min-h-screen box-border flex items-center justify-center p-4 bg-white bg-center bg-no-repeat bg-cover overflow-x-hidden">
+    <div class="w-[1160px] max-w-full flex bg-white rounded-md min-h-[440px] overflow-hidden auth-card">
+      <div class="relative hidden lg:block flex-1 auth-band">
+        <span class="auth-band-glyph" aria-hidden="true">{{ systemMark }}</span>
+        <div class="auth-band-content">
+          <div class="auth-band-name">{{ systemTitle }}</div>
+          <div class="auth-band-sub">{{ systemSubTitle }}</div>
+          <span class="auth-band-rule" aria-hidden="true"></span>
         </div>
       </div>
 
-      <div class="w-[500px]">
-        <h1 class="mt-[60px] text-center">用户注册</h1>
-        <el-form class="w-[80%] mx-auto mt-[30px] mb-[15px]">
-          <el-input
-              size="large"
-              v-model="form.username"
-              placeholder="用户名"
-              type="text"
-              maxlength="50"
-              class="mb-4"
-          >
-            <template #prepend>
-              <i class="sfont system-xingmingyonghumingnicheng"></i>
-            </template>
-          </el-input>
-          <el-input
-              size="large"
-              v-model="form.password"
-              :type="passwordType"
-              placeholder="密码"
-              name="password"
-              maxlength="50"
-              class="mb-4"
-          >
-            <template #prepend>
-              <i class="sfont system-mima"></i>
-            </template>
-            <template #append>
-              <i class="sfont cursor-pointer text-primary" :class="passwordType ? 'system-yanjing-guan': 'system-yanjing'"
-                 @click="passwordTypeChange"></i>
-            </template>
-          </el-input>
-          <el-input
-              size="large"
-              v-model="form.confirmPassword"
-              :type="passwordType"
-              placeholder="确认密码"
-              name="confirmPassword"
-              maxlength="50"
-              class="mb-4"
-          >
-            <template #prepend>
-              <i class="sfont system-mima"></i>
-            </template>
-            <template #append>
-              <i class="sfont cursor-pointer text-primary" :class="passwordType ? 'system-yanjing-guan': 'system-yanjing'"
-                 @click="passwordTypeChange"></i>
-            </template>
-          </el-input>
-          <el-input
-              size="large"
-              v-model="form.email"
-              placeholder="邮箱"
-              type="text"
-              maxlength="50"
-              class="mb-4"
-          >
-            <template #prepend>
-              <el-icon><Message /></el-icon>
-            </template>
-          </el-input>
+      <div class="w-[500px] max-w-full">
+        <h1 class="mt-[40px] text-center">用户注册</h1>
+        <el-form
+            ref="formRef"
+            :model="form"
+            :rules="rules"
+            label-position="top"
+            class="auth-form w-[80%] mx-auto mt-[24px] mb-[15px]"
+            @submit.prevent="submit"
+        >
+          <el-form-item prop="username" label="用户名" for="reg-username" class="mb-4">
+            <el-input
+                size="large"
+                v-model="form.username"
+                id="reg-username"
+                placeholder="例如：zhangsan"
+                type="text"
+                name="username"
+                autocomplete="username"
+                spellcheck="false"
+                maxlength="50"
+            >
+              <template #prepend>
+                <i class="sfont system-xingmingyonghumingnicheng" aria-hidden="true"></i>
+              </template>
+            </el-input>
+          </el-form-item>
+          <el-form-item prop="password" label="密码" for="reg-password" class="mb-4">
+            <el-input
+                size="large"
+                v-model="form.password"
+                id="reg-password"
+                :type="passwordType"
+                placeholder="至少 8 位"
+                name="new-password"
+                autocomplete="new-password"
+                maxlength="64"
+            >
+              <template #prepend>
+                <i class="sfont system-mima" aria-hidden="true"></i>
+              </template>
+              <template #append>
+                <el-button
+                    text
+                    :aria-pressed="passwordType === 'text'"
+                    :aria-label="passwordType === 'text' ? '隐藏密码' : '显示密码'"
+                    @click="passwordTypeChange"
+                >
+                  <i
+                      class="sfont"
+                      :class="passwordType === 'text' ? 'system-yanjing' : 'system-yanjing-guan'"
+                      aria-hidden="true"
+                  ></i>
+                </el-button>
+              </template>
+            </el-input>
+          </el-form-item>
+          <el-form-item prop="confirmPassword" label="确认密码" for="reg-confirm-password" class="mb-4">
+            <el-input
+                size="large"
+                v-model="form.confirmPassword"
+                id="reg-confirm-password"
+                :type="passwordType"
+                placeholder="再次输入密码"
+                name="confirm-password"
+                autocomplete="new-password"
+                maxlength="64"
+            >
+              <template #prepend>
+                <i class="sfont system-mima" aria-hidden="true"></i>
+              </template>
+              <template #append>
+                <el-button
+                    text
+                    :aria-pressed="passwordType === 'text'"
+                    :aria-label="passwordType === 'text' ? '隐藏密码' : '显示密码'"
+                    @click="passwordTypeChange"
+                >
+                  <i
+                      class="sfont"
+                      :class="passwordType === 'text' ? 'system-yanjing' : 'system-yanjing-guan'"
+                      aria-hidden="true"
+                  ></i>
+                </el-button>
+              </template>
+            </el-input>
+          </el-form-item>
+          <el-form-item prop="email" label="邮箱" for="reg-email" class="mb-4">
+            <el-input
+                size="large"
+                v-model="form.email"
+                id="reg-email"
+                placeholder="name@example.com"
+                type="email"
+                name="email"
+                autocomplete="email"
+                spellcheck="false"
+                maxlength="50"
+            >
+              <template #prepend>
+                <el-icon aria-hidden="true"><Message /></el-icon>
+              </template>
+            </el-input>
+          </el-form-item>
 
-          <el-button type="primary" :loading="form.loading" @click="submit" class="w-full mt-2" size="medium">
+          <el-button type="primary" native-type="submit" :loading="form.loading" class="w-full mt-2" size="medium">
             注册
           </el-button>
           <div class="text-center mt-4">
             <span>已有账号？</span>
-            <a @click="toLogin" class="text-primary ml-1 cursor-pointer">立即登录</a>
+            <router-link to="/login" class="auth-link ml-1">立即登录</router-link>
           </div>
         </el-form>
       </div>
@@ -85,17 +129,17 @@
 </template>
 
 <script lang="js">
-import { systemTitle, systemSubTitle } from '@/config'
+import { systemTitle, systemSubTitle, systemMark } from '@/config'
 import { defineComponent, ref, reactive } from 'vue'
 import { useStore } from 'vuex'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import loginLeftPng from '@/assets/login/left.jpg';
 
 export default defineComponent({
   setup() {
     const store = useStore()
     const router = useRouter()
+    const formRef = ref(null)
     const form = reactive({
       username: '',
       password: '',
@@ -103,100 +147,79 @@ export default defineComponent({
       email: '',
       loading: false
     })
+    const rules = {
+      username: [
+        { required: true, message: '请输入用户名', trigger: 'blur' },
+        { max: 50, message: '用户名不能超过 50 个字符', trigger: 'blur' }
+      ],
+      password: [
+        { required: true, message: '请输入密码', trigger: 'blur' },
+        { min: 8, max: 64, message: '密码长度需在 8~64 位之间', trigger: 'blur' }
+      ],
+      confirmPassword: [
+        { required: true, message: '请再次输入密码', trigger: 'blur' },
+        {
+          validator: (rule, value, callback) => {
+            if (value !== form.password) {
+              callback(new Error('两次输入的密码不一致'))
+            } else {
+              callback()
+            }
+          },
+          trigger: 'blur'
+        }
+      ],
+      email: [
+        { required: true, message: '请输入邮箱', trigger: 'blur' },
+        { type: 'email', message: '请输入有效的邮箱地址', trigger: 'blur' }
+      ]
+    }
     const passwordType = ref('password')
     const passwordTypeChange = () => {
-      passwordType.value === '' ? passwordType.value = 'password' : passwordType.value = ''
-    }
-    const checkForm = () => {
-      return new Promise((resolve, reject) => {
-        if (form.username === '') {
-          ElMessage.warning({
-            message: '用户名不能为空',
-            type: 'warning'
-          });
-          return;
-        }
-        if (form.password === '') {
-          ElMessage.warning({
-            message: '密码不能为空',
-            type: 'warning'
-          })
-          return;
-        }
-        if (form.confirmPassword === '') {
-          ElMessage.warning({
-            message: '确认密码不能为空',
-            type: 'warning'
-          })
-          return;
-        }
-        if (form.password !== form.confirmPassword) {
-          ElMessage.warning({
-            message: '两次输入的密码不一致',
-            type: 'warning'
-          })
-          return;
-        }
-        if (form.email === '') {
-          ElMessage.warning({
-            message: '邮箱不能为空',
-            type: 'warning'
-          })
-          return;
-        }
-        // 邮箱格式验证
-        const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailReg.test(form.email)) {
-          ElMessage.warning({
-            message: '请输入有效的邮箱地址',
-            type: 'warning'
-          })
-          return;
-        }
-        resolve(true)
-      })
+      passwordType.value = passwordType.value === 'text' ? 'password' : 'text'
     }
     const submit = () => {
-      checkForm()
-      .then(() => {
+      formRef.value.validate((valid) => {
+        if (!valid) {
+          return
+        }
         form.loading = true
-        let params = {
+        const params = {
           username: form.username,
           password: form.password,
           email: form.email
         }
         store.dispatch('user/register', params)
-        .then(() => {
-          ElMessage.success({
-            message: '注册成功',
-            type: 'success',
-            showClose: true,
-            duration: 1000
+          .then(() => {
+            ElMessage.success({
+              message: '注册成功',
+              type: 'success',
+              showClose: true,
+              duration: 1000
+            })
+            router.push('/login')
           })
-          // 注册成功后跳转到登录页
-          router.push('/login')
-        }).catch(err => {
-          ElMessage.error({
-            message: err.message || '注册失败',
-            type: 'error'
+          .catch(err => {
+            ElMessage.error({
+              message: err.message || '注册失败',
+              type: 'error'
+            })
           })
-        }).finally(() => {
-          form.loading = false
-        })
+          .finally(() => {
+            form.loading = false
+          })
       })
     }
-    const toLogin = () => {
-      router.push('/login')
-    }
     return {
-      loginLeftPng,
+      systemMark,
       systemTitle,
       systemSubTitle,
+      formRef,
       form,
+      rules,
       passwordType,
       passwordTypeChange,
-      submit,
-      toLogin
+      submit
     }
   }
 })

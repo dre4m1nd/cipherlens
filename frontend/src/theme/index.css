@@ -4,31 +4,31 @@
 /* Theme Variables */
 :root {
   /* 主题颜色 */
-  --el-color-primary: var(--system-primary-color, #409eff);
+  --el-color-primary: var(--system-primary-color, #0f766e);
   /* logo */
-  --system-logo-color: #f1f1f1;
-  --system-logo-background: #263445;
+  --system-logo-color: #eaf3f1;
+  --system-logo-background: #0f3b42;
   /* 菜单 */
-  --system-menu-text: #bfcbd9;
-  --system-menu-background: #181f31;
-  --system-menu-children-background: #1f2d3d;
+  --system-menu-text: #d7e4e2;
+  --system-menu-background: #0f3b42;
+  --system-menu-children-background: #14474f;
   --system-menu-submenu-active: #fff;
-  --system-menu-hover-background: #203448;
+  --system-menu-hover-background: #1a5560;
   /* header区域 */
   --system-header-background: #fff;
   --system-header-text: #303133;
   --system-header-breadcrumb-text: #606266;
   --system-header-item-hover: rgba(0, 0, 0, 0.06);
-  --system-header-border: #d8dce5;
+  --system-header-border: #dde5e3;
   --system-header-tab-background: #fff;
   /* container区域 */
-  --system-container-background: #f0f2f5;
+  --system-container-background: #f1f5f4;
   --system-container-main-background: #fff;
   /* 页面 */
   --system-page-background: #fff;
   --system-page-color: #303133;
   --system-page-tip-color: rgba(0, 0, 0, 0.45);
-  --system-page-border-color: #ebeef5;
+  --system-page-border-color: #e3e9e7;
 }
 
 /* NProgress Styles */

@@ -57,7 +57,8 @@
 
   /* Tip Styles */
   .my-tip {
-    @apply bg-[#f1f1f1] p-1.25 text-left rounded-sm;
+    @apply p-1.25 text-left rounded-sm;
+    background-color: var(--tip-background);
   }
 
   /* Scrollbar Styles */
@@ -80,4 +81,166 @@
   .system-scrollbar:hover::-webkit-scrollbar-thumb:hover {
     @apply bg-[rgba(144,147,153,0.5)];
   }
+}
+
+/* 表格里的数字等宽，日期/序号纵向对得齐 */
+.el-table {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 页面外壳：原先 .app-container 没有任何样式，卡片贴边且高度塌陷，留出灰色断层。
+   这里统一给内边距 + 撑满高度，卡片成为页面表面。 */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 100%;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.app-container > .el-card {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-container > .el-card > .el-card__body {
+  flex: 1 1 auto;
+}
+
+/* 标题/锚点定位时避开顶部固定头部（Header + Tabs 约 90px） */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  scroll-margin-top: 90px;
+}
+
+/* 数字列等宽，便于纵向比对 */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== 认证页（登录 / 注册 / 忘记密码）设计令牌 =====
+   颜色、阴影只在此处定义一次，页面里禁止再出现硬编码值。 */
+:root {
+  /* 颜色令牌在 palette.css（单一配色来源）；这里只放非颜色的层 */
+  --auth-elevation-1: 0 6px 20px 5px rgba(152, 152, 152, 0.1), 0 16px 24px 2px rgba(117, 117, 117, 0.14);
+}
+
+/* 认证卡片：唯一的阴影层（elevation-1） */
+.auth-card {
+  box-shadow: var(--auth-elevation-1);
+}
+
+/* 品牌面板「金库带」 */
+.auth-band {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  padding-left: 88px;
+  background-image: linear-gradient(135deg, var(--auth-band-from), var(--auth-band-to));
+}
+
+/* 签名元素：品牌字放大到溢出画布，只做气氛（6% 对比，不承载信息） */
+.auth-band-glyph {
+  position: absolute;
+  right: -0.17em;
+  bottom: -0.34em;
+  font-family: "Songti SC", "SimSun", serif;
+  font-size: clamp(260px, 38vw, 560px);
+  line-height: 1;
+  color: var(--auth-band-glyph);
+  pointer-events: none;
+  user-select: none;
+}
+
+.auth-band-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* 字体声：宋体承担 display，黑体只做正文（「鉴」= 铜镜 / 印鉴） */
+.auth-band-name {
+  font-family: "Songti SC", "SimSun", serif;
+  font-size: 76px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.06em;
+  color: var(--auth-band-ink);
+}
+
+.auth-band-sub {
+  margin-top: 20px;
+  font-size: 20px;
+  letter-spacing: 0.12em;
+  color: var(--auth-band-sub);
+}
+
+/* 唯一的标点：一道青绿短线 */
+.auth-band-rule {
+  display: block;
+  width: 64px;
+  height: 3px;
+  margin-top: 32px;
+  background: var(--auth-band-mark);
+}
+
+/* 认证页文字链接：默认 / hover / focus-visible / active 四态齐全 */
+.auth-link {
+  color: var(--auth-accent);
+  border-radius: 2px;
+}
+
+.auth-link:hover {
+  color: var(--auth-accent-strong);
+  text-decoration: underline;
+}
+
+.auth-link:active {
+  color: var(--auth-accent-strong);
+}
+
+.auth-link:focus-visible {
+  outline: 2px solid var(--auth-accent);
+  outline-offset: 2px;
+  text-decoration: underline;
+}
+
+/* 链接不可用态（例如提交中禁止跳转） */
+.auth-link[aria-disabled="true"] {
+  color: var(--auth-hint-ink);
+  text-decoration: none;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+/* 认证页表单：可见标签置于输入框上方（不再用 placeholder 充当标签） */
+.auth-form .el-form-item__label {
+  display: block;
+  padding: 0 0 6px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--auth-label-ink);
+  text-align: left;
+}
+
+.auth-form .el-form-item__content {
+  line-height: normal;
+}
+
+/* 提交中/禁用态：Element Plus 默认用 opacity 淡化，文字对比度会掉到阈值以下，
+   这里改成显式配色（#e9ecf0 底上 6.87:1） */
+.auth-form .el-button.is-disabled,
+.auth-form .el-button:disabled {
+  opacity: 1;
+  color: var(--auth-disabled-ink);
+  background-color: var(--auth-disabled-surface);
+  border-color: var(--auth-disabled-surface);
+  cursor: not-allowed;
 }

@@ -6,9 +6,13 @@
           v-if="item.redirect === 'noRedirect' || index == levelList.length - 1"
           class="text-[var(--system-header-breadcrumb-text-color)] cursor-text"
         >{{ item.meta.title }}</span>
-        <a v-else @click.prevent="handleLink(item)" class="text-[var(--system-header-text-color)]">
+        <router-link
+          v-else
+          :to="resolveTarget(item)"
+          class="text-[var(--system-header-text-color)] hover:underline"
+        >
           {{ item.meta.title }}
-        </a>
+        </router-link>
       </el-breadcrumb-item>
     </transition-group>
   </el-breadcrumb>
@@ -16,14 +20,13 @@
 
 <script lang="js">
 import { ref, defineComponent, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 import { isBackMenu } from '@/config'
 export default defineComponent({
   name: "BreadCrumb",
   setup() {
     const levelList = ref([]);
     const route = useRoute();
-    const router = useRouter();
     const getBreadcrumb = () => {
       let matched = route.matched.filter(item => item.meta && item.meta.title);
       const first = matched[0];
@@ -36,15 +39,10 @@ export default defineComponent({
       () => route.path,
       () => getBreadcrumb()
     );
-    const handleLink = (item) => {
-      const { redirect, path } = item;
-      if (redirect) {
-        router.push(redirect.toString());
-        return;
-      }
-      router.push(path);
+    const resolveTarget = (item) => {
+      return item.redirect ? String(item.redirect) : item.path;
     };
-    return { levelList, handleLink, isBackMenu };
+    return { levelList, resolveTarget, isBackMenu };
   }
 });
 </script>

@@ -5,50 +5,46 @@
         <div class="card-header">
           <span>密码项列表</span>
           <el-button type="primary" @click="handleAdd" class="ml-4">
-            <i class="sfont system-tianjia mr-1"></i>添加密码项
+            <i class="sfont system-tianjia mr-1" aria-hidden="true"></i>添加密码项
           </el-button>
         </div>
       </template>
-      <el-form :inline="true" class="demo-form-inline mb-4">
+      <el-form :inline="true" class="demo-form-inline mb-4" @submit.prevent="handleQuery">
         <el-form-item label="应用名称">
-          <el-input v-model="queryParams.appName" placeholder="请输入应用名称" clearable style="width: 200px" />
+          <el-input v-model="queryParams.appName" name="appName" autocomplete="off" placeholder="请输入应用名称" clearable style="width: 200px" />
         </el-form-item>
         <el-form-item label="账号">
-          <el-input v-model="queryParams.account" placeholder="请输入账号" clearable style="width: 200px" />
+          <el-input v-model="queryParams.account" name="account" autocomplete="off" placeholder="请输入账号" clearable style="width: 200px" />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleQuery">
-            <i class="sfont system-cha询 mr-1"></i>查询
+          <el-button type="primary" native-type="submit">
+            <i class="sfont system-cha mr-1" aria-hidden="true"></i>查询
           </el-button>
           <el-button @click="resetQuery">
-            <i class="sfont system-chongzhi mr-1"></i>重置
+            <i class="sfont system-chongzhi mr-1" aria-hidden="true"></i>重置
           </el-button>
         </el-form-item>
       </el-form>
       <el-table v-loading="loading" :data="passwordList" border style="width: 100%" stripe size="small">
         <!-- 序号列，替换ID列 -->
-        <el-table-column type="index" label="序号" width="97" align="center" />
+        <el-table-column type="index" label="序号" width="72" align="center" />
         <!-- 合理分配列宽，确保操作列有足够空间 -->
-        <el-table-column prop="appName" label="应用名称" width="129" show-overflow-tooltip align="center" />
-        <el-table-column prop="account" label="账号" width="150" show-overflow-tooltip align="center" />
-        <el-table-column prop="remark" label="备注" width="179" show-overflow-tooltip align="center" />
-        <el-table-column prop="createTime" label="创建时间" width="192" align="center" />
-        <el-table-column prop="updateTime" label="更新时间" width="157" align="center" />
+        <el-table-column prop="appName" label="应用名称" min-width="120" show-overflow-tooltip align="center" />
+        <el-table-column prop="account" label="账号" min-width="140" show-overflow-tooltip align="center" />
+        <el-table-column prop="remark" label="备注" min-width="140" show-overflow-tooltip align="center" />
+        <el-table-column prop="createTime" label="创建时间" width="160" align="center" />
+        <el-table-column prop="updateTime" label="更新时间" width="160" align="center" />
         <!-- 优化操作按钮排列，确保有足够空间显示所有按钮 -->
-        <el-table-column label="操作" width="280" align="center">
+        <el-table-column label="操作" min-width="230" align="center">
           <template #default="scope">
-            <div style="display: flex; gap: 5px; flex-wrap: nowrap;">
-              <el-button size="small" @click="handleView(scope.row)">
-                <i class="sfont system-chakan mr-1"></i>查看
+            <div style="display: flex; gap: 4px; flex-wrap: nowrap; justify-content: center; align-items: center;">
+              <el-button size="small" text @click="handleView(scope.row)">查看
               </el-button>
-              <el-button size="small" type="primary" @click="handleEdit(scope.row)">
-                <i class="sfont system-bianji mr-1"></i>编辑
+              <el-button size="small" text @click="handleEdit(scope.row)">编辑
               </el-button>
-              <el-button size="small" type="success" @click="handleEvaluate(scope.row)">
-                <i class="sfont system-pinggu mr-1"></i>评估
+              <el-button size="small" type="primary" @click="handleEvaluate(scope.row)">评估
               </el-button>
-              <el-button size="small" type="danger" @click="handleDelete(scope.row)">
-                <i class="sfont system-shanchu mr-1"></i>删除
+              <el-button size="small" text type="danger" @click="handleDelete(scope.row)">删除
               </el-button>
             </div>
           </template>
@@ -68,15 +64,16 @@
 
       <!-- 添加密码项弹窗 -->
       <el-dialog v-model="addDialogVisible" title="添加密码项" width="500px">
-        <el-form ref="addFormRef" :model="addForm" :rules="addRules" label-width="100px">
+        <el-form ref="addFormRef" :model="addForm" :rules="addRules" label-width="100px" @submit.prevent="submitAddForm">
+          <button type="submit" class="hidden" aria-hidden="true" tabindex="-1"></button>
           <el-form-item label="应用名称" prop="appName">
-            <el-input v-model="addForm.appName" placeholder="请输入应用名称" maxlength="50" />
+            <el-input v-model="addForm.appName" name="appName" autocomplete="off" placeholder="请输入应用名称" maxlength="50" />
           </el-form-item>
           <el-form-item label="账号" prop="account">
-            <el-input v-model="addForm.account" placeholder="请输入账号" maxlength="50" />
+            <el-input v-model="addForm.account" name="account" autocomplete="off" placeholder="请输入账号" maxlength="50" />
           </el-form-item>
           <el-form-item label="密码" prop="password">
-            <el-input v-model="addForm.password" type="password" placeholder="请输入密码" maxlength="100" />
+            <el-input v-model="addForm.password" type="password" name="new-password" autocomplete="new-password" placeholder="请输入密码" maxlength="100" show-password />
           </el-form-item>
           <el-form-item label="备注" prop="remark">
             <el-input
@@ -96,15 +93,16 @@
 
       <!-- 编辑密码项弹窗 -->
       <el-dialog v-model="editDialogVisible" title="编辑密码项" width="500px">
-        <el-form ref="editFormRef" :model="editForm" :rules="editRules" label-width="100px">
+        <el-form ref="editFormRef" :model="editForm" :rules="editRules" label-width="100px" @submit.prevent="submitEditForm">
+          <button type="submit" class="hidden" aria-hidden="true" tabindex="-1"></button>
           <el-form-item label="应用名称" prop="appName">
-            <el-input v-model="editForm.appName" placeholder="请输入应用名称" maxlength="50" />
+            <el-input v-model="editForm.appName" name="appName" autocomplete="off" placeholder="请输入应用名称" maxlength="50" />
           </el-form-item>
           <el-form-item label="账号" prop="account">
-            <el-input v-model="editForm.account" placeholder="请输入账号" maxlength="50" />
+            <el-input v-model="editForm.account" name="account" autocomplete="off" placeholder="请输入账号" maxlength="50" />
           </el-form-item>
           <el-form-item label="密码" prop="password">
-            <el-input v-model="editForm.password" type="password" placeholder="请输入密码" maxlength="100" />
+            <el-input v-model="editForm.password" type="password" name="new-password" autocomplete="new-password" placeholder="不修改请留空" maxlength="100" show-password />
           </el-form-item>
           <el-form-item label="备注" prop="remark">
             <el-input
@@ -121,22 +119,40 @@
           <el-button type="primary" @click="submitEditForm">提交</el-button>
         </template>
       </el-dialog>
+
+      <!-- 密码评估结果弹窗 -->
+      <el-dialog v-model="evaluateDialogVisible" title="密码评估结果" width="500px">
+        <el-descriptions :column="1" border>
+          <el-descriptions-item label="评估分数">
+            <el-tag :type="evaluateScoreType">{{ evaluateResult.evaluateScore }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="风险类型">{{ evaluateResult.riskType || '无' }}</el-descriptions-item>
+          <el-descriptions-item label="评估建议">{{ evaluateResult.suggestions }}</el-descriptions-item>
+          <el-descriptions-item label="评估时间">{{ evaluateResult.evaluateTime }}</el-descriptions-item>
+        </el-descriptions>
+        <template #footer>
+          <el-button type="primary" @click="evaluateDialogVisible = false">关闭</el-button>
+        </template>
+      </el-dialog>
     </el-card>
   </div>
 </template>
 
 <script lang="js">
-import { defineComponent, ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { defineComponent, ref, reactive, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getPasswordItemListApi, deletePasswordItemApi, addPasswordItemApi, getPasswordItemApi, updatePasswordItemApi, getPasswordPlainTextApi, evaluatePasswordApi } from '@/api/passwordItem'
 
 export default defineComponent({
   
   setup() {
+    const route = useRoute()
     const router = useRouter()
     const addDialogVisible = ref(false)
     const editDialogVisible = ref(false)
+    const evaluateDialogVisible = ref(false)
+    const evaluateResult = ref({})
     const editPasswordId = ref('')
     const addFormRef = ref(null)
     const editFormRef = ref(null)
@@ -150,7 +166,29 @@ export default defineComponent({
       pageNum: 1,
       pageSize: 10
     })
+    const PAGE_SIZES = [10, 20, 30, 50]
     const passwordList = ref([])
+
+    const evaluateScoreType = computed(() => {
+      const score = Number(evaluateResult.value.evaluateScore) || 0
+      if (score >= 80) return 'success'
+      if (score >= 60) return 'warning'
+      return 'danger'
+    })
+
+    // 筛选/分页状态同步到 URL，便于刷新、分享与后退
+    const syncQuery = () => {
+      const query = {
+        pageNum: String(pagination.pageNum),
+        pageSize: String(pagination.pageSize)
+      }
+      if (queryParams.appName) query.appName = queryParams.appName
+      if (queryParams.account) query.account = queryParams.account
+      // 仅在参数变化时替换，避免重复导航导致页面重挂载
+      if (router.resolve({ path: route.path, query }).fullPath !== route.fullPath) {
+        router.replace({ path: route.path, query })
+      }
+    }
 
     // 添加密码表单
     const addForm = reactive({
@@ -201,7 +239,6 @@ export default defineComponent({
         { max: 50, message: '账号不能超过50个字符', trigger: 'blur' }
       ],
       password: [
-        { required: true, message: '请输入密码', trigger: 'blur' },
         { min: 6, message: '密码不能少于6个字符', trigger: 'blur' },
         { max: 100, message: '密码不能超过100个字符', trigger: 'blur' }
       ],
@@ -213,50 +250,28 @@ export default defineComponent({
 
     // 获取密码项列表
     const getPasswordList = () => {
-      console.log('=== 开始获取密码项列表 ===')
+      syncQuery()
       loading.value = true
       const data = {
         ...queryParams,
         ...pagination
       }
-      console.log('请求参数:', data)
-      console.log('API函数:', getPasswordItemListApi)
       getPasswordItemListApi(data)
         .then(res => {
-          console.log('响应结果完整数据:', res)
-          console.log('响应数据类型:', typeof res)
-          console.log('响应数据是否为对象:', res instanceof Object)
-          // 处理后端返回的完整数据结构 {code, message, data}
-          if (res && res.code === 200 && res.data) {
-            console.log('res.data:', res.data)
-            console.log('res.data类型:', typeof res.data)
-            // 根据响应格式，res.data包含records数组和分页信息
-            if (res.data.records) {
-              passwordList.value = Array.isArray(res.data.records) ? res.data.records : []
-              total.value = Number(res.data.total) || passwordList.value.length
-            } else {
-              // 兼容旧格式
-              passwordList.value = Array.isArray(res.data) ? res.data : []
-              total.value = passwordList.value.length
-            }
-            console.log('passwordList.value:', passwordList.value)
-            console.log('total.value:', total.value)
+          // 后端返回 { code, message, data: { records, total } }
+          if (res && res.data) {
+            passwordList.value = Array.isArray(res.data.records) ? res.data.records : []
+            total.value = Number(res.data.total) || passwordList.value.length
           } else {
-            console.error('响应数据结构异常:', res)
             passwordList.value = []
             total.value = 0
           }
-          loading.value = false
         })
         .catch(err => {
-          console.error('请求错误完整信息:', err)
-          console.error('错误消息:', err.message)
-          console.error('错误响应:', err.response)
-          loading.value = false
           ElMessage.error('获取密码项列表失败：' + (err.msg || err.message || '未知错误'))
         })
         .finally(() => {
-          console.log('=== 获取密码项列表结束 ===')
+          loading.value = false
         })
     }
 
@@ -297,10 +312,8 @@ export default defineComponent({
       addForm.account = ''
       addForm.password = ''
       addForm.remark = ''
-      
-      console.log('handleAdd clicked, addDialogVisible before:', addDialogVisible.value)
+
       addDialogVisible.value = true
-      console.log('handleAdd clicked, addDialogVisible after:', addDialogVisible.value)
     }
 
     // 提交添加密码表单
@@ -326,24 +339,17 @@ export default defineComponent({
 
     // 编辑密码项
     const handleEdit = (row) => {
-      console.log('handleEdit clicked, row:', row)
-      // 设置编辑密码项ID
       editForm.id = row.id
-      // 加载密码项详情
+      // 加载密码项详情（后端返回的是密文，不能回填到密码框，否则会被重复加密）
       getPasswordItemApi(row.id)
         .then(res => {
-          console.log('getPasswordItemApi response:', res)
-          // 设置表单数据
           editForm.appName = res.data.appName
           editForm.account = res.data.account
-          editForm.password = res.data.password
+          editForm.password = ''
           editForm.remark = res.data.remark
-          // 显示编辑弹窗
           editDialogVisible.value = true
-          console.log('editDialogVisible set to:', editDialogVisible.value)
         })
-        .catch(err => {
-          console.error('加载密码项详情失败:', err)
+        .catch(() => {
           ElMessage.error('加载密码项详情失败')
         })
     }
@@ -353,18 +359,14 @@ export default defineComponent({
       if (editFormRef.value) {
         editFormRef.value.validate((valid) => {
           if (valid) {
-            console.log('submitEditForm, editForm:', editForm)
-            // 调用更新密码项API
-            // 注意：API需要两个参数：id和data
+            // 密码留空表示不修改，后端会忽略空密码
             updatePasswordItemApi(editForm.id, editForm)
               .then(() => {
                 ElMessage.success('更新成功')
                 editDialogVisible.value = false
-                // 重新获取密码项列表
                 getPasswordList()
               })
-              .catch(err => {
-                console.error('更新密码项失败:', err)
+              .catch(() => {
                 ElMessage.error('更新失败')
               })
           }
@@ -415,36 +417,28 @@ export default defineComponent({
 
     // 密码评估
     const handleEvaluate = (row) => {
-      // 调用密码评估API
       evaluatePasswordApi(row.id)
         .then(res => {
-          // 使用弹窗显示评估结果
-          if (res && res.code === 200) {
-            const evaluateData = res.data;
-            // 使用HTML格式美化弹窗内容，移除密码项ID的显示
-            let message = `<div style="padding: 10px;">`;
-            message += `<div style="margin-bottom: 10px;"><strong>评估分数:</strong> <span style="color: ${evaluateData.evaluateScore >= 80 ? '#67c23a' : evaluateData.evaluateScore >= 60 ? '#e6a23c' : '#f56c6c'}; font-size: 18px;">${evaluateData.evaluateScore}</span></div>`;
-            message += `<div style="margin-bottom: 10px;"><strong>风险类型:</strong> <span>${evaluateData.riskType}</span></div>`;
-            message += `<div style="margin-bottom: 10px;"><strong>评估建议:</strong> <span style="color: #909399;">${evaluateData.suggestions}</span></div>`;
-            message += `<div style="margin-bottom: 10px;"><strong>评估时间:</strong> <span style="color: #909399; font-size: 12px;">${evaluateData.evaluateTime}</span></div>`;
-            message += `</div>`;
-            
-            ElMessageBox.alert(message, '密码评估结果', {
-              confirmButtonText: '关闭',
-              type: 'info',
-              dangerouslyUseHTMLString: true
-            });
+          if (res && res.data) {
+            evaluateResult.value = res.data
+            evaluateDialogVisible.value = true
           } else {
-            ElMessage.error(res?.message || '评估失败');
+            ElMessage.error((res && res.message) || '评估失败')
           }
         })
-        .catch(err => {
-          console.error('评估失败:', err);
-          ElMessage.error('评估失败');
-        });
+        .catch(() => {
+          ElMessage.error('评估失败')
+        })
     }
 
     onMounted(() => {
+      // 从 URL 恢复筛选与分页状态
+      const q = route.query
+      pagination.pageNum = Math.max(1, Number(q.pageNum) || 1)
+      const size = Number(q.pageSize)
+      pagination.pageSize = PAGE_SIZES.includes(size) ? size : 10
+      queryParams.appName = typeof q.appName === 'string' ? q.appName : ''
+      queryParams.account = typeof q.account === 'string' ? q.account : ''
       getPasswordList()
     })
 
@@ -463,6 +457,9 @@ export default defineComponent({
       handleView,
       handleDelete,
       handleEvaluate,
+      evaluateDialogVisible,
+      evaluateResult,
+      evaluateScoreType,
       addDialogVisible,
       editDialogVisible,
       editPasswordId,

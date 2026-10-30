@@ -55,6 +55,10 @@ router.beforeEach(async (to, _from, next) => {
   NProgress.start();
   if (store.state.user.token) {
     to.meta.title ? (changeTitle(to.meta.title)) : "" // 动态title
+    // 刷新后补拉用户信息，否则顶栏一直显示「未登录」
+    if (!store.state.user.info || !store.state.user.info.username) {
+      store.dispatch('user/getInfo').catch(() => {})
+    }
     if (to.path === '/login') {
       next('/')
       return

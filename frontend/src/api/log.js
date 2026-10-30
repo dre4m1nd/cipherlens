@@ -4,7 +4,8 @@ import request from '@/utils/system/request'
 export function getLogListApi({ pageNum, pageSize }) {
   return request({
     url: `/log/list?pageNum=${pageNum}&pageSize=${pageSize}`,
-    method: 'post'
+    method: 'post',
+    data: {}
   })
 }
 

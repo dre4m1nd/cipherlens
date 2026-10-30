@@ -8,25 +8,29 @@
       </template>
       <!-- 密码输入区域 -->
       <div class="password-input-container">
-        <el-form :model="passwordForm" label-width="80px" size="large">
+        <el-form :model="passwordForm" label-width="80px" size="large" @submit.prevent="handleEvaluate">
           <el-form-item label="密码">
             <el-input 
               v-model="passwordForm.password" 
               placeholder="请输入要评估的密码" 
               type="password" 
               show-password 
-              style="width: 300px;"
+              name="password"
+              aria-label="待评估密码"
+              autocomplete="off"
+              spellcheck="false"
+              class="evaluate-input"
             />
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" @click="handleEvaluate" :loading="loading">开始评估</el-button>
+            <el-button type="primary" native-type="submit" :loading="loading">开始评估</el-button>
             <el-button @click="handleReset">重置</el-button>
           </el-form-item>
         </el-form>
       </div>
       
       <!-- 加载状态 -->
-      <div v-if="loading" class="loading-container">
+      <div v-if="loading" class="loading-container" aria-busy="true" aria-live="polite">
         <el-skeleton :rows="10" animated />
       </div>
       
@@ -34,7 +38,7 @@
       <div v-else-if="evaluateResult">
         <el-descriptions title="评估结果" :column="1" border>
           <el-descriptions-item label="评估分数">
-            <el-rate v-model="score" disabled show-score text-color="#ff9900" />
+            <span class="tabular-nums text-[18px] font-semibold">{{ evaluateResult.evaluateScore }} 分</span>
           </el-descriptions-item>
           <el-descriptions-item label="风险类型">
             <el-tag :type="riskLevelType">
@@ -56,9 +60,11 @@
         </el-card>
       </div>
       
-      <!-- 无结果状态 -->
-      <div v-else class="no-result-container">
-        <el-empty description="请输入密码进行评估" />
+      <!-- 无结果状态：不用默认空盒子插画，给一句可执行的话 -->
+      <div v-else class="no-result">
+        <i class="sfont system-mima no-result-icon" aria-hidden="true"></i>
+        <p class="no-result-title">还没有评估结果</p>
+        <p class="no-result-hint">在上方输入一个密码，立刻看到强度评分与加固建议</p>
       </div>
       
 
@@ -68,15 +74,12 @@
 
 <script lang="js">
 import { defineComponent, reactive, ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { evaluatePasswordByInputApi } from '@/api/passwordItem'
 
 export default defineComponent({
   setup() {
-    const router = useRouter()
     const loading = ref(false)
-    const score = ref(0)
     const evaluateResult = ref(null)
     
     // 密码表单
@@ -103,14 +106,13 @@ export default defineComponent({
       loading.value = true
       evaluatePasswordByInputApi(passwordForm.password)
         .then(res => {
-          if (res && res.code === 200) {
+          if (res && res.data) {
             evaluateResult.value = res.data
-            score.value = res.data.evaluateScore
             loading.value = false
             ElMessage.success('评估成功')
           } else {
             loading.value = false
-            ElMessage.error(res?.message || '评估失败')
+            ElMessage.error((res && res.message) || '评估失败')
           }
         })
         .catch(err => {
@@ -127,7 +129,6 @@ export default defineComponent({
 
     return {
       loading,
-      score,
       evaluateResult,
       riskLevelType,
       passwordForm,
@@ -145,15 +146,49 @@ export default defineComponent({
   align-items: center;
 }
 
+.evaluate-input {
+  max-width: 420px;
+}
+
+/* 空状态：只用一个弱化的图标 + 两行字，没有插画、没有边框盒子 */
+.no-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  min-height: 300px;
+  padding: 40px 16px;
+  text-align: center;
+}
+
+.no-result-icon {
+  font-size: 26px;
+  line-height: 1;
+  color: var(--app-ink-mute);
+}
+
+.no-result-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--app-ink);
+}
+
+.no-result-hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--app-ink-soft);
+  max-width: 420px;
+}
+
 .loading-container {
   padding: 20px;
 }
 
 .password-input-container {
-  margin-bottom: 20px;
-  padding: 10px;
-  background-color: #f5f7fa;
-  border-radius: 4px;
+  padding: 4px 0 12px;
 }
 
 .no-result-container {

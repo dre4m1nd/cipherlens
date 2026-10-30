@@ -28,24 +28,17 @@ const actions = {
     return new Promise((resolve, reject) => {
       loginApi(params)
       .then(res => {
-        // 兼容后端返回的两种token格式：res.data.token 或 res.data直接是token
-        const token = res.data.token || res.data;
-        console.log('Login response:', res)
-        console.log('Token received:', token)
+        // 后端返回 { code, message, data: { token } }
+        const token = res.data && res.data.token ? res.data.token : res.data
         commit('tokenChange', token)
-        console.log('Token in state after commit:', state.token)
-        console.log('Token from getter:', getters.token)
-        // 直接登录成功，不再等待getInfo接口
         resolve(token)
         // 异步获取用户信息，失败不影响登录
         setTimeout(() => {
-          this.dispatch('getInfo').catch(infoErr => {
-            console.error('Get info error (non-blocking):', infoErr)
-            // 可以在这里显示警告，但不影响登录
+          this.dispatch('user/getInfo').catch(() => {
+            // 用户信息获取失败不影响登录流程
           })
         }, 0)
       }).catch(err => {
-        console.error('Login error:', err)
         reject(err)
       })
     })
@@ -69,7 +62,7 @@ const actions = {
       updateUserApi(params)
       .then(res => {
         // 更新用户信息
-        commit('infoChange', res.data.info)
+        commit('infoChange', res.data)
         resolve(res.data)
       }).catch(err => {
         reject(err)
@@ -94,8 +87,9 @@ const actions = {
     return new Promise((resolve, reject) => {
       getInfoApi()
       .then(res => {
-        commit('infoChange', res.data.info)
-        resolve(res.data.info)
+        // 后端直接返回 UpdateUserForm（{ username, password }）
+        commit('infoChange', res.data)
+        resolve(res.data)
       })
       .catch(err => {
         reject(err)

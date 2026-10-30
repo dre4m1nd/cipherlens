@@ -6,7 +6,7 @@
           <span>操作日志查询</span>
         </div>
       </template>
-      <el-form :inline="true" class="demo-form-inline mb-4">
+      <el-form :inline="true" class="demo-form-inline mb-4" @submit.prevent="handleQuery">
         <el-form-item label="日志类型">
           <el-select v-model="queryParams.operationType" placeholder="请选择日志类型" clearable style="width: 180px">
                   <el-option label="登录操作" value="LOGIN" />
@@ -19,7 +19,7 @@
                 </el-select>
         </el-form-item>
         <el-form-item label="操作内容">
-          <el-input v-model="queryParams.operationContent" placeholder="请输入操作内容" clearable style="width: 200px" />
+          <el-input v-model="queryParams.operationContent" name="operationContent" autocomplete="off" placeholder="请输入操作内容" clearable style="width: 200px" />
         </el-form-item>
         <el-form-item label="操作时间">
           <el-date-picker
@@ -34,16 +34,16 @@
           />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleQuery">
-            <i class="sfont system-cha询 mr-1"></i>查询
+          <el-button type="primary" native-type="submit">
+            <i class="sfont system-cha mr-1" aria-hidden="true"></i>查询
           </el-button>
           <el-button @click="resetQuery">
-            <i class="sfont system-chongzhi mr-1"></i>重置
+            <i class="sfont system-chongzhi mr-1" aria-hidden="true"></i>重置
           </el-button>
         </el-form-item>
       </el-form>
       <el-table v-loading="loading" :data="logList" border style="width: 100%">
-        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column prop="id" label="ID" width="80" class-name="tabular-nums" />
         <el-table-column prop="operationType" label="日志类型" width="120">
           <template #default="scope">
             <el-tag :type="logTypeMap[scope.row.operationType]">
@@ -68,7 +68,7 @@
         <el-table-column label="详情" width="80" fixed="right">
           <template #default="scope">
             <el-button size="small" @click="handleDetail(scope.row)">
-              <i class="sfont system-chakan mr-1"></i>详情
+              <i class="sfont system-chakan mr-1" aria-hidden="true"></i>详情
             </el-button>
           </template>
         </el-table-column>
@@ -98,22 +98,24 @@
         <el-descriptions-item label="日志类型">{{ logTypeLabelMap[currentLog.operationType] }}</el-descriptions-item>
         <el-descriptions-item label="操作内容">{{ logSourceMap[currentLog.operationContent] || currentLog.operationContent }}</el-descriptions-item>
         <el-descriptions-item label="操作结果">{{ currentLog.operationResult === 1 ? '成功' : '失败' }}</el-descriptions-item>
-        <el-descriptions-item label="耗时(ms)">{{ currentLog.costTime }}</el-descriptions-item>
+        <el-descriptions-item label="耗时(ms)">
+          <span class="tabular-nums">{{ currentLog.costTime }}</span>
+        </el-descriptions-item>
         <el-descriptions-item label="操作时间">{{ currentLog.operationTime }}</el-descriptions-item>
-        <el-descriptions-item label="操作对象类型">{{ currentLog.sourceType ? logSourceMap[currentLog.sourceType] : '未知' }}</el-descriptions-item>
       </el-descriptions>
     </el-dialog>
   </div>
 </template>
 
 <script lang="js">
-import { defineComponent, reactive, ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { defineComponent, reactive, ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { getLogListByTypeApi } from '@/api/log'
 
 export default defineComponent({
   setup() {
+    const route = useRoute()
     const router = useRouter()
     const loading = ref(false)
     const total = ref(0)
@@ -123,11 +125,11 @@ export default defineComponent({
     // 日志类型映射
     const logTypeMap = {
       LOGIN: 'info',
-      LOGOUT: 'warning',
-      ADD: 'success',
-      DELETE: 'danger',
-      UPDATE: 'primary',
-      QUERY: 'primary',
+      LOGOUT: 'info',
+      ADD: 'info',
+      DELETE: 'info',
+      UPDATE: 'info',
+      QUERY: 'info',
       EVALUATE: 'info'
     }
     
@@ -161,37 +163,50 @@ export default defineComponent({
     })
     
     const logList = ref([])
+    const PAGE_SIZES = [10, 20, 30, 50]
+
+    // 筛选/分页状态同步到 URL，便于刷新、分享与后退
+    const syncQuery = () => {
+      const query = {
+        pageNum: String(pagination.pageNum),
+        pageSize: String(pagination.pageSize)
+      }
+      if (queryParams.operationType) query.operationType = queryParams.operationType
+      if (queryParams.operationContent) query.operationContent = queryParams.operationContent
+      if (queryParams.timeRange && queryParams.timeRange.length === 2) {
+        query.startTime = queryParams.timeRange[0]
+        query.endTime = queryParams.timeRange[1]
+      }
+      // 仅在参数变化时替换，避免重复导航导致页面重挂载
+      if (router.resolve({ path: route.path, query }).fullPath !== route.fullPath) {
+        router.replace({ path: route.path, query })
+      }
+    }
 
     // 获取日志列表
     const getLogList = () => {
+      syncQuery()
       loading.value = true
       const params = {
-        ...queryParams,
-        startTime: queryParams.timeRange[0] || '',
-        endTime: queryParams.timeRange[1] || '',
+        operationType: queryParams.operationType || undefined,
+        operationContent: queryParams.operationContent || undefined,
         ...pagination
       }
-      // 删除不必要的参数
-      delete params.timeRange
-      
-      console.log('请求参数:', params)
+      // 仅在有选择时间范围时才传时间字段（空字符串会导致后端日期解析失败）
+      if (queryParams.timeRange && queryParams.timeRange.length === 2) {
+        params.startTime = queryParams.timeRange[0]
+        params.endTime = queryParams.timeRange[1]
+      }
       getLogListByTypeApi(params)
         .then(res => {
-          console.log('API响应:', res)
-          // 将日志来源对象类型的英文标识映射为中文
-          const records = res.data.records || []
-          logList.value = records.map(log => ({
-            ...log,
-            // 如果API返回的是sourceType字段，则自动映射为中文
-            ...(log.sourceType && { sourceType: log.sourceType }) // 保留原始值，在显示时通过logSourceMap映射
-          }))
-          total.value = res.data.total || 0
-          loading.value = false
+          logList.value = (res.data && res.data.records) || []
+          total.value = Number(res.data && res.data.total) || 0
         })
-        .catch(err => {
-          console.error('API错误:', err)
-          loading.value = false
+        .catch(() => {
           ElMessage.error('获取日志列表失败')
+        })
+        .finally(() => {
+          loading.value = false
         })
     }
 
@@ -231,6 +246,16 @@ export default defineComponent({
 
 
     onMounted(() => {
+      // 从 URL 恢复筛选与分页状态
+      const q = route.query
+      pagination.pageNum = Math.max(1, Number(q.pageNum) || 1)
+      const size = Number(q.pageSize)
+      pagination.pageSize = PAGE_SIZES.includes(size) ? size : 10
+      queryParams.operationType = typeof q.operationType === 'string' ? q.operationType : ''
+      queryParams.operationContent = typeof q.operationContent === 'string' ? q.operationContent : ''
+      queryParams.timeRange = (typeof q.startTime === 'string' && typeof q.endTime === 'string')
+        ? [q.startTime, q.endTime]
+        : []
       getLogList()
     })
 

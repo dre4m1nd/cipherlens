@@ -5,11 +5,13 @@
 const showLogo = true; // 是否显示Logo顶部模块
 const systemTitle = '密鉴' // 系统名称，用于显示在左上角模块，登录模块、以及浏览器标题上使用,使用配置项
 const systemSubTitle = '密码管理与安全评估平台' // 系统提示信息，用于登录模块使用
+const systemMark = '鉴' // 登录页品牌面板的签名字（放大成水印）；一般取 systemTitle 的末字
 
 /** 使用后端路由 */
 const isBackMenu = false
 export {
   systemTitle,
   systemSubTitle,
+  systemMark,
   isBackMenu,
 }

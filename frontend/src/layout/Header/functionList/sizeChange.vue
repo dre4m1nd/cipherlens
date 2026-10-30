@@ -1,8 +1,8 @@
 <template>
   <el-dropdown @command="handleCommand" size="medium">
-    <span class="el-dropdown-link">
-      <i class="sfont system-zuixiaohua"></i>
-    </span>
+    <button type="button" class="icon-btn" aria-label="界面尺寸" title="界面尺寸">
+      <i class="sfont system-zuixiaohua" aria-hidden="true"></i>
+    </button>
     <template #dropdown>
       <el-dropdown-menu>
         <el-dropdown-item
@@ -51,5 +51,20 @@ export default defineComponent({
 </script>
 
 <style scoped>
-/* 样式已通过WindiCSS类名实现 */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+}
+
+.icon-btn:focus-visible {
+  outline: 2px solid var(--system-primary-color);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
 </style>

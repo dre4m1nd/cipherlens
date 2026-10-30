@@ -2,16 +2,16 @@
   <div class="wscn-http404-container layout-container flex center">
     <div class="wscn-http404">
       <div class="pic-404">
-        <img class="pic-404__parent" :src="four" alt="404" />
-        <img class="pic-404__child left" :src="four_cloud" alt="404" />
-        <img class="pic-404__child mid" :src="four_cloud" alt="404" />
-        <img class="pic-404__child right" :src="four_cloud" alt="404" />
+        <img class="pic-404__parent" :src="four" alt="" width="1014" height="556" />
+        <img class="pic-404__child left" :src="four_cloud" alt="" width="152" height="138" />
+        <img class="pic-404__child mid" :src="four_cloud" alt="" width="152" height="138" />
+        <img class="pic-404__child right" :src="four_cloud" alt="" width="152" height="138" />
       </div>
       <div class="bullshit">
-        <div class="bullshit__oops">页面不存在!</div>
-        <div class="bullshit__info">
+        <h1 class="bullshit__oops">页面不存在!</h1>
+        <p class="bullshit__info">
           请检查您输入的网址是否正确，或单击下面的按钮返回主页
-        </div>
+        </p>
         <el-button @click="go" type="primary" round>跳转首页</el-button>
       </div>
     </div>
@@ -38,6 +38,24 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
+  .bullshit__oops {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
+  .bullshit__info {
+    margin-bottom: 20px;
+  }
+
+  /* 开启“减少动画”时停在静态云朵位置 */
+  @media (prefers-reduced-motion: reduce) {
+    .pic-404__child {
+      animation: none;
+      opacity: 1;
+    }
+  }
+
   .wscn-http404 {
     position: relative;
     overflow: hidden;

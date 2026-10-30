@@ -2,15 +2,15 @@ export const style = {
   'default': {
     name: '默认菜单风格',
     menu: {
-      textColor: '#bfcbd9',
-      background: '#181f31',
-      childrenBackground: '#1f2d3d',
-      hoverBackground: '#203448',
+      textColor: '#d7e4e2',
+      background: '#0f3b42',
+      childrenBackground: '#14474f',
+      hoverBackground: '#1a5560',
       submenuActiveColor: '#fff'
     },
     logo: {
-      color: '#f1f1f1',
-      background: '#263445'
+      color: '#eaf3f1',
+      background: '#0f3b42'
     },
     header: {
       background: '#fff',

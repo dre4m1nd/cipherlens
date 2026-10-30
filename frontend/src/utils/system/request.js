@@ -1,4 +1,4 @@
-import axios , { AxiosError, AxiosRequestConfig, AxiosResponse, AxiosInstance } from 'axios'
+import axios from 'axios'
 import store from '@/store'
 import router from '@/router'
 import { ElMessage } from 'element-plus'
@@ -25,7 +25,7 @@ service.interceptors.request.use(
     return config
   },
   (error) => {
-    console.log(error) // for debug
+    // 网络层错误（如断网、超时）
     return Promise.reject(error)
   }
 )
@@ -41,7 +41,6 @@ service.interceptors.response.use(
     }
   },
   (error)=> {
-    console.log(error) // for debug
     // 处理HTTP错误
     if (error.response) {
       // 服务器返回了错误状态码

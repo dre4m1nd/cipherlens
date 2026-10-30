@@ -9,6 +9,8 @@ import 'element-plus/theme-chalk/display.css' // 引入基于断点的隐藏类
 import 'element-plus/dist/index.css'
 import 'normalize.css' // css初始化
 import 'virtual:windi.css' // 引入Windicss样式
+import './assets/style/sfont.css' // 图标字体（自托管，替代原 at.alicdn.com 外链）
+import './assets/style/palette.css' // 配色令牌（EP 主色阶 + 认证页色）
 import './assets/style/common.css'
 import './assets/style/transition.css'
 import './theme/index.css'

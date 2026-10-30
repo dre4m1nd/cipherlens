@@ -1,15 +1,20 @@
 <template>
   <div>
-    <div title="系统设置" @click="drawerChange(true)">
-      <i class="sfont system-shezhi cursor-pointer focus:outline-none"></i>
-    </div>
+    <button
+        type="button"
+        class="icon-btn"
+        title="系统设置"
+        aria-label="打开系统设置"
+        @click="drawerChange(true)"
+    >
+      <i class="sfont system-shezhi" aria-hidden="true"></i>
+    </button>
     <el-drawer
       title="系统设置"
       v-model="drawer"
       size="300px"
-      :show-close="false"
       direction="rtl">
-      <h3 class="mt-[40px] mb-[20px] text-[rgba(0,0,0,.85)] text-[14px] leading-[22px] text-left px-5 first:mt-0">整体风格设置</h3>
+      <h2 class="mt-[40px] mb-[20px] text-[rgba(0,0,0,.85)] text-[14px] leading-[22px] text-left px-5 first:mt-0">整体风格设置</h2>
       <div class="theme-box text-left pl-5">
         <theme-icon
           :active="state.style"
@@ -25,7 +30,7 @@
           :activeColor="row.page.color"
         ></theme-icon>
       </div>
-      <h3 class="mt-[40px] mb-[20px] text-[rgba(0,0,0,.85)] text-[14px] leading-[22px] text-left px-5">主题色</h3>
+      <h2 class="mt-[40px] mb-[20px] text-[rgba(0,0,0,.85)] text-[14px] leading-[22px] text-left px-5">主题色</h2>
       <div class="theme-box text-left pl-5">
         <theme-color
           v-for="(item, key) in themeColorArr"
@@ -39,14 +44,14 @@
           :tip="item.tip"
         ></theme-color>
       </div>
-      <h3 class="mt-[40px] mb-[20px] text-[rgba(0,0,0,.85)] text-[14px] leading-[22px] text-left px-5">其他设置</h3>
+      <h2 class="mt-[40px] mb-[20px] text-[rgba(0,0,0,.85)] text-[14px] leading-[22px] text-left px-5">其他设置</h2>
       <div class="list px-5 py-0">
         <div class="list-item flex justify-between items-center mb-[15px]" v-for="option in options" :key="option.name">
           <span class="text-[16px]">{{ option.name }}</span>
           <el-switch
             v-model="option.value"
-            active-color="#13ce66"
-            inactive-color="#ff4949"
+            :aria-label="option.name"
+            style="--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949"
             @change="change(option)"
           >
           </el-switch>
@@ -78,12 +83,10 @@ export default defineComponent({
       menuType: store.state.app.theme.state.menuType
     })
     const themeColorArr = [
-      { color: '#409eff', textColor: '#fff', tip: '默认蓝' },
-      { color: '#d60f20', textColor: '#fff', tip: '玫瑰红' },
-      { color: '#ac25e6', textColor: '#fff', tip: '优雅紫' },
-      { color: '#4dc86f', textColor: '#fff', tip: '故事绿' },
-      { color: '#13c2c2', textColor: '#fff', tip: '明青' },
-      { color: '#333', textColor: '#fff', tip: '极客黑' }
+      { color: '#0f766e', textColor: '#fff', tip: '墨青（默认）' },
+      { color: '#1b4b73', textColor: '#fff', tip: '深海蓝' },
+      { color: '#3f4a52', textColor: '#fff', tip: '石墨' },
+      { color: '#8a6520', textColor: '#fff', tip: '铜金' }
     ]
     const setTheme = () => {
       const userTheme = style[state.style]
@@ -144,5 +147,20 @@ export default defineComponent({
 </script>
 
 <style scoped>
-/* 样式已通过WindiCSS类名实现 */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+}
+
+.icon-btn:focus-visible {
+  outline: 2px solid var(--system-primary-color);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
 </style>

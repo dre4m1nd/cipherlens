@@ -59,11 +59,11 @@ export function evaluatePasswordApi(passwordItemId) {
   })
 }
 
-/** 输入密码评估Api */
+/** 输入密码评估Api（POST 请求体传密码，避免出现在 URL） */
 export function evaluatePasswordByInputApi(password) {
   return request({
     url: '/evaluate',
-    method: 'get',
-    params: { password }
+    method: 'post',
+    data: { password }
   })
 }

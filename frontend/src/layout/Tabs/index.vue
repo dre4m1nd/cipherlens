@@ -16,14 +16,15 @@
       />
     </el-scrollbar>
     <div class="handle">
-      <div id="vueAdminBoxTabRefresh" @click="pageReload"></div>
-      <div id="vueAdminBoxTabCloseSelf" @click="closeCurrentRoute"></div>
-      <div id="vueAdminBoxTabCloseOther" @click="closeOtherRoute"></div>
-      <div id="vueAdminBoxTabCloseAll" @click="closeAllRoute"></div>
+      <!-- 隐藏的编程调用入口（由 utils/tab 触发），不是可见按钮 -->
+      <div id="vueAdminBoxTabRefresh" aria-hidden="true" @click="pageReload"></div>
+      <div id="vueAdminBoxTabCloseSelf" aria-hidden="true" @click="closeCurrentRoute"></div>
+      <div id="vueAdminBoxTabCloseOther" aria-hidden="true" @click="closeOtherRoute"></div>
+      <div id="vueAdminBoxTabCloseAll" aria-hidden="true" @click="closeAllRoute"></div>
       <el-dropdown placement="bottom">
-        <div class="el-dropdown-link">
-          <el-icon><ArrowDown /></el-icon>
-        </div>
+        <button type="button" class="el-dropdown-link handle-btn" aria-label="标签页操作">
+          <el-icon aria-hidden="true"><ArrowDown /></el-icon>
+        </button>
         <template #dropdown>
           <el-dropdown-menu>
             <el-dropdown-item class="tab-ddropdown-item" :icon="RefreshLeft" @click="pageReload">重新加载</el-dropdown-item>
@@ -34,7 +35,9 @@
         </template>
       </el-dropdown>
       <el-tooltip class="item" effect="dark" :content="contentFullScreen ? '退出全屏': '全屏'" placement="bottom">
-        <el-icon @click="onFullscreen"><FullScreen /></el-icon>
+        <button type="button" class="handle-btn" :aria-label="contentFullScreen ? '退出全屏' : '进入全屏'" @click="onFullscreen">
+          <el-icon aria-hidden="true"><FullScreen /></el-icon>
+        </button>
       </el-tooltip>
     </div>
   </div>
@@ -74,9 +77,6 @@ export default defineComponent({
     if (menuList.value.length === 0) { // 判断之前有没有调用过
       addMenu(defaultMenu)
     }
-    watch(menuList.value, (newVal) => {
-      tabsHook.setItem(newVal)
-    })
     watch(menuList, (newVal) => {
       tabsHook.setItem(newVal)
     })
@@ -205,15 +205,9 @@ export default defineComponent({
 
     /** 监听鼠标滚动事件 */
     function handleWhellScroll(e) {
-      let distance = 0
-      let speed = 5
-      if (e.wheelDelta > 30) {
-        distance = -10
-      } else if (e.wheelDelta < -30) {
-        distance = 10
-      }
-      // console.log(scrollLeft.value + eventDelta / 4)
-      scrollbarDom.value?.setScrollLeft(scrollLeft.value + distance * speed)
+      // deltaY 为标准属性（Firefox 无 wheelDelta），每次滚动 50px
+      const delta = Math.sign(e.deltaY) * 50
+      scrollbarDom.value?.setScrollLeft(scrollLeft.value + delta)
     }
 
     /** 监听滚动事件 */
@@ -274,6 +268,19 @@ export default defineComponent({
   align-items: center;
 }
 
+.handle-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+}
+
+.handle-btn:focus-visible {
+  outline: 2px solid var(--system-primary-color);
+  outline-offset: -2px;
+}
+
 .tabs .handle i {
   color: var(--system-header-text-color);
 }
@@ -306,10 +313,6 @@ export default defineComponent({
 
 .el-icon-full-screen:hover {
   background: rgba(0,0,0,.025);
-}
-
-.el-icon-full-screen:focus {
-  outline: none;
 }
 
 .tab-ddropdown-item {

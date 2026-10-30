@@ -54,7 +54,7 @@ export default defineConfig((configEnv) => {
       target: 'es2015',
       outDir: 'dist',
       assetsDir: 'assets',
-      minify: 'terser',
+      minify: 'esbuild',
       sourcemap: env.VITE_BUILD_SOURCEMAP === 'true',
       chunkSizeWarningLimit: 1500,
       rollupOptions: {

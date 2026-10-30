@@ -1,0 +1,31 @@
+/* 配色单一来源：Element Plus 主色阶 + 认证页色令牌。改配色只动这个文件。 */
+:root {
+  --system-primary-color: #0f766e;
+  --el-color-primary: #0f766e;
+  --el-color-primary-light-3: #579f9a;
+  --el-color-primary-light-5: #87bbb7;
+  --el-color-primary-light-7: #b7d6d4;
+  --el-color-primary-light-8: #cfe4e2;
+  --el-color-primary-light-9: #e7f1f1;
+  --el-color-primary-dark-2: #0c5e58;
+  --auth-accent: #0d6a62;
+  --auth-accent-strong: #0a544e;
+  --auth-label-ink: #2b3331;
+  --auth-hint-ink: #5b6664;
+  --auth-disabled-surface: #e7ecea;
+  --auth-disabled-ink: #48524f;
+  --auth-band-from: #062b33;
+  --auth-band-to: #0a1b3d;
+  --auth-band-ink: #ffffff;
+  --auth-band-sub: rgba(255,255,255,0.82);
+  --auth-band-mark: #5eead4;
+  --auth-band-glyph: rgba(255,255,255,0.06);
+  /* 应用外壳（登录后）中性色与强调，全部偏向青绿家族 */
+  --app-ink: #1f2b2a;
+  --app-ink-soft: #4f5b59;
+  --app-ink-mute: #6b7674; /* 仅用于装饰性箭头（非文本，≥30） */
+  --app-line: #e3e9e7;
+  --app-row-hover: #f1f5f4;
+  --app-accent: #0f766e;
+  --tip-background: #f1f1f1;
+}
