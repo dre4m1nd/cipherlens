@@ -35,10 +35,10 @@
         </el-form-item>
         <el-form-item>
           <el-button type="primary" native-type="submit">
-            <i class="sfont system-cha mr-1" aria-hidden="true"></i>查询
+            查询
           </el-button>
           <el-button @click="resetQuery">
-            <i class="sfont system-chongzhi mr-1" aria-hidden="true"></i>重置
+            重置
           </el-button>
         </el-form-item>
       </el-form>
@@ -68,7 +68,7 @@
         <el-table-column label="详情" width="80" fixed="right">
           <template #default="scope">
             <el-button size="small" @click="handleDetail(scope.row)">
-              <i class="sfont system-chakan mr-1" aria-hidden="true"></i>详情
+              详情
             </el-button>
           </template>
         </el-table-column>

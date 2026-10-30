@@ -1,7 +1,8 @@
 module.exports = {
   root: true,
   env: {
-    node: true
+    node: true,
+    browser: true
   },
   plugins: ['vue'],
   extends: ['eslint:recommended'],

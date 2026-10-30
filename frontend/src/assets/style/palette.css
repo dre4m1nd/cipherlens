@@ -27,5 +27,12 @@
   --app-line: #e3e9e7;
   --app-row-hover: #f1f5f4;
   --app-accent: #0f766e;
+  /* 内联错误块（白底 6.5:1，不靠红底硬凑） */
+  --auth-error-ink: #8f2a24;
+  --auth-error-surface: #fdf1f0;
+  /* 语义色做正文要够深：EP 默认的 #f56c6c / #e6a23c / #67c23a 做文字只有 3:1 上下 */
+  --app-danger: #b3261e;
+  --app-warning: #8a5a00;
+  --app-success: #1e6b3a;
   --tip-background: #f1f1f1;
 }

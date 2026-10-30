@@ -17,6 +17,7 @@
             :model="form"
             :rules="rules"
             label-position="top"
+            :aria-busy="form.loading"
             class="auth-form w-[80%] mx-auto mt-[24px] mb-[15px]"
             @submit.prevent="submit"
         >
@@ -31,6 +32,7 @@
                 autocomplete="username"
                 spellcheck="false"
                 maxlength="50"
+                :disabled="form.loading"
             >
               <template #prepend>
                 <i class="sfont system-xingmingyonghumingnicheng" aria-hidden="true"></i>
@@ -47,6 +49,10 @@
                 name="new-password"
                 autocomplete="new-password"
                 maxlength="64"
+                :disabled="form.loading"
+                @keydown="checkCapsLock"
+                @keyup="checkCapsLock"
+                @blur="capsLockOn = false"
             >
               <template #prepend>
                 <i class="sfont system-mima" aria-hidden="true"></i>
@@ -67,6 +73,11 @@
               </template>
             </el-input>
           </el-form-item>
+          <p v-if="capsLockOn" class="auth-caps" role="status">
+            大写锁定已开启
+          </p>
+          <PasswordStrength :password="form.password" />
+
           <el-form-item prop="confirmPassword" label="确认密码" for="reg-confirm-password" class="mb-4">
             <el-input
                 size="large"
@@ -77,6 +88,7 @@
                 name="confirm-password"
                 autocomplete="new-password"
                 maxlength="64"
+                :disabled="form.loading"
             >
               <template #prepend>
                 <i class="sfont system-mima" aria-hidden="true"></i>
@@ -108,6 +120,7 @@
                 autocomplete="email"
                 spellcheck="false"
                 maxlength="50"
+                :disabled="form.loading"
             >
               <template #prepend>
                 <el-icon aria-hidden="true"><Message /></el-icon>
@@ -115,7 +128,9 @@
             </el-input>
           </el-form-item>
 
-          <el-button type="primary" native-type="submit" :loading="form.loading" class="w-full mt-2" size="medium">
+          <p v-if="errorMessage" class="auth-error" role="alert">{{ errorMessage }}</p>
+
+          <el-button type="primary" native-type="submit" :loading="form.loading" :disabled="form.loading" class="w-full mt-2" size="medium">
             注册
           </el-button>
           <div class="text-center mt-4">
@@ -131,11 +146,13 @@
 <script lang="js">
 import { systemTitle, systemSubTitle, systemMark } from '@/config'
 import { defineComponent, ref, reactive } from 'vue'
+import PasswordStrength from '@/components/PasswordStrength.vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 
 export default defineComponent({
+  components: { PasswordStrength },
   setup() {
     const store = useStore()
     const router = useRouter()
@@ -175,12 +192,29 @@ export default defineComponent({
       ]
     }
     const passwordType = ref('password')
+    const capsLockOn = ref(false)
+    const errorMessage = ref('')
+
+    const checkCapsLock = (e) => {
+      if (e && typeof e.getModifierState === 'function') {
+        capsLockOn.value = e.getModifierState('CapsLock')
+      }
+    }
+
+    const focusFirstError = () => {
+      const root = formRef.value && formRef.value.$el
+      if (!root) return
+      const el = root.querySelector('.el-form-item.is-error input')
+      if (el) el.focus()
+    }
     const passwordTypeChange = () => {
       passwordType.value = passwordType.value === 'text' ? 'password' : 'text'
     }
     const submit = () => {
+      errorMessage.value = ''
       formRef.value.validate((valid) => {
         if (!valid) {
+          focusFirstError()
           return
         }
         form.loading = true
@@ -219,6 +253,9 @@ export default defineComponent({
       rules,
       passwordType,
       passwordTypeChange,
+      capsLockOn,
+      errorMessage,
+      checkCapsLock,
       submit
     }
   }

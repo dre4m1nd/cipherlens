@@ -17,6 +17,7 @@
             :model="form"
             :rules="rules"
             label-position="top"
+            :aria-busy="form.loading"
             class="auth-form w-[80%] mx-auto mt-[24px] mb-[15px]"
             @submit.prevent="submit"
         >
@@ -31,6 +32,7 @@
                 autocomplete="username"
                 spellcheck="false"
                 maxlength="50"
+                :disabled="form.loading"
             >
               <template #prepend>
                 <i class="sfont system-xingmingyonghumingnicheng" aria-hidden="true"></i>
@@ -48,6 +50,7 @@
                 autocomplete="email"
                 spellcheck="false"
                 maxlength="50"
+                :disabled="form.loading"
             >
               <template #prepend>
                 <el-icon aria-hidden="true"><Message /></el-icon>
@@ -90,6 +93,10 @@
                 name="new-password"
                 autocomplete="new-password"
                 maxlength="64"
+                :disabled="form.loading"
+                @keydown="checkCapsLock"
+                @keyup="checkCapsLock"
+                @blur="capsLockOn = false"
             >
               <template #prepend>
                 <i class="sfont system-mima" aria-hidden="true"></i>
@@ -111,7 +118,14 @@
             </el-input>
           </el-form-item>
 
-          <el-button type="primary" native-type="submit" :loading="form.loading" class="w-full" size="medium">
+          <p v-if="capsLockOn" class="auth-caps" role="status">
+            大写锁定已开启
+          </p>
+          <PasswordStrength :password="form.password" />
+
+          <p v-if="errorMessage" class="auth-error" role="alert">{{ errorMessage }}</p>
+
+          <el-button type="primary" native-type="submit" :loading="form.loading" :disabled="form.loading" class="w-full" size="medium">
             重置密码
           </el-button>
           <div class="text-center mt-3">
@@ -128,11 +142,13 @@
 <script lang="js">
 import { systemTitle, systemSubTitle, systemMark } from '@/config'
 import { defineComponent, ref, reactive, onUnmounted } from 'vue'
+import PasswordStrength from '@/components/PasswordStrength.vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { resetPasswordApi, sendResetCodeApi } from '@/api/user'
 
 export default defineComponent({
+  components: { PasswordStrength },
   setup() {
     const router = useRouter()
     const formRef = ref(null)
@@ -159,6 +175,21 @@ export default defineComponent({
       ]
     }
     const passwordType = ref('password')
+    const capsLockOn = ref(false)
+    const errorMessage = ref('')
+
+    const checkCapsLock = (e) => {
+      if (e && typeof e.getModifierState === 'function') {
+        capsLockOn.value = e.getModifierState('CapsLock')
+      }
+    }
+
+    const focusFirstError = () => {
+      const root = formRef.value && formRef.value.$el
+      if (!root) return
+      const el = root.querySelector('.el-form-item.is-error input')
+      if (el) el.focus()
+    }
     const sending = ref(false)
     const countdown = ref(0)
     const liveMessage = ref('')
@@ -201,8 +232,10 @@ export default defineComponent({
     }
 
     const submit = () => {
+      errorMessage.value = ''
       formRef.value.validate((valid) => {
         if (!valid) {
+          focusFirstError()
           return
         }
         form.loading = true
@@ -246,6 +279,9 @@ export default defineComponent({
       rules,
       passwordType,
       passwordTypeChange,
+      capsLockOn,
+      errorMessage,
+      checkCapsLock,
       sending,
       countdown,
       liveMessage,

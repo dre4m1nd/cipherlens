@@ -5,7 +5,7 @@
         <div class="card-header">
           <span>密码项列表</span>
           <el-button type="primary" @click="handleAdd" class="ml-4">
-            <i class="sfont system-tianjia mr-1" aria-hidden="true"></i>添加密码项
+            添加密码项
           </el-button>
         </div>
       </template>
@@ -18,10 +18,10 @@
         </el-form-item>
         <el-form-item>
           <el-button type="primary" native-type="submit">
-            <i class="sfont system-cha mr-1" aria-hidden="true"></i>查询
+            查询
           </el-button>
           <el-button @click="resetQuery">
-            <i class="sfont system-chongzhi mr-1" aria-hidden="true"></i>重置
+            重置
           </el-button>
         </el-form-item>
       </el-form>

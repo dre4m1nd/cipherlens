@@ -18,6 +18,7 @@
             :rules="rules"
             label-position="top"
             class="auth-form w-[80%] mx-auto mt-[32px] mb-[15px]"
+            :aria-busy="form.loading"
             @submit.prevent="submit"
         >
           <el-form-item prop="username" label="用户名" for="login-username" class="mb-5">
@@ -31,6 +32,7 @@
                 autocomplete="username"
                 spellcheck="false"
                 maxlength="50"
+                :disabled="form.loading"
             >
               <template #prepend>
                 <i class="sfont system-xingmingyonghumingnicheng" aria-hidden="true"></i>
@@ -47,6 +49,10 @@
                 name="password"
                 autocomplete="current-password"
                 maxlength="50"
+                :disabled="form.loading"
+                @keydown="checkCapsLock"
+                @keyup="checkCapsLock"
+                @blur="capsLockOn = false"
             >
               <template #prepend>
                 <i class="sfont system-mima" aria-hidden="true"></i>
@@ -68,7 +74,17 @@
             </el-input>
           </el-form-item>
 
-          <el-button type="primary" native-type="submit" :loading="form.loading" class="w-full" size="medium">
+          <p v-if="capsLockOn" class="auth-caps" role="status">
+            大写锁定已开启
+          </p>
+
+          <div class="auth-row">
+            <el-checkbox v-model="rememberMe" :disabled="form.loading">记住用户名</el-checkbox>
+          </div>
+
+          <p v-if="errorMessage" class="auth-error" role="alert">{{ errorMessage }}</p>
+
+          <el-button type="primary" native-type="submit" :loading="form.loading" :disabled="form.loading" class="w-full" size="large">
             登录
           </el-button>
           <div class="text-center mt-3">
@@ -86,7 +102,7 @@
 
 <script lang="js">
 import { systemTitle, systemSubTitle, systemMark } from '@/config'
-import { defineComponent, ref, reactive } from 'vue'
+import { defineComponent, ref, reactive, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter, useRoute } from 'vue-router'
 import { getAuthRoutes } from '@/router/permission'
@@ -108,12 +124,41 @@ export default defineComponent({
       password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
     }
     const passwordType = ref('password')
+    const capsLockOn = ref(false)
+    const errorMessage = ref('')
+    const rememberMe = ref(false)
+
+    // 记住用户名：只存用户名，不存密码；默认不勾选
+    const REMEMBER_KEY = 'login:username'
+    onMounted(() => {
+      const saved = localStorage.getItem(REMEMBER_KEY)
+      if (saved) {
+        form.username = saved
+        rememberMe.value = true
+      }
+    })
+
+    const checkCapsLock = (e) => {
+      if (e && typeof e.getModifierState === 'function') {
+        capsLockOn.value = e.getModifierState('CapsLock')
+      }
+    }
+
+    // 校验失败时把焦点放到第一个出错的字段上
+    const focusFirstError = () => {
+      const root = formRef.value && formRef.value.$el
+      if (!root) return
+      const el = root.querySelector('.el-form-item.is-error input')
+      if (el) el.focus()
+    }
     const passwordTypeChange = () => {
       passwordType.value = passwordType.value === 'text' ? 'password' : 'text'
     }
     const submit = () => {
+      errorMessage.value = ''
       formRef.value.validate((valid) => {
         if (!valid) {
+          focusFirstError()
           return
         }
         form.loading = true
@@ -129,16 +174,17 @@ export default defineComponent({
             showClose: true,
             duration: 1000
           })
+          if (rememberMe.value) {
+            localStorage.setItem(REMEMBER_KEY, form.username)
+          } else {
+            localStorage.removeItem(REMEMBER_KEY)
+          }
           await getAuthRoutes()
           await router.push(route.query.redirect || '/')
         })
         .catch(err => {
-          ElMessage.error({
-            message: err.message || '登录失败，请重试',
-            type: 'error',
-            showClose: true,
-            duration: 2000
-          })
+          // 服务端错误改成字段上方内联显示，比右上角 toast 更容易看到
+          errorMessage.value = err && err.message ? err.message : '登录失败，请检查用户名和密码后重试'
         })
         .finally(() => {
           form.loading = false
@@ -155,6 +201,10 @@ export default defineComponent({
       rules,
       passwordType,
       passwordTypeChange,
+      capsLockOn,
+      errorMessage,
+      rememberMe,
+      checkCapsLock,
       submit
     }
   }

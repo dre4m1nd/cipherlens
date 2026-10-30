@@ -190,6 +190,40 @@ h6 {
   background: var(--auth-band-mark);
 }
 
+
+/* 认证页：大写锁定提示 / 内联错误 / 记住我那一行 */
+.auth-caps {
+  display: flex;
+  align-items: center;
+  margin: -6px 0 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--app-warning);
+}
+
+.auth-error {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--auth-error-ink);
+  background-color: var(--auth-error-surface);
+  border-left: 3px solid var(--app-danger);
+  border-radius: 2px;
+}
+
+.auth-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.auth-row .el-checkbox__label {
+  font-size: 13px;
+  color: var(--auth-hint-ink);
+}
+
 /* 认证页文字链接：默认 / hover / focus-visible / active 四态齐全 */
 .auth-link {
   color: var(--auth-accent);
