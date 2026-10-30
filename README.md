@@ -2,6 +2,22 @@
 
 前后端分离项目，前后端各自独立构建、独立部署，通过 HTTP 接口通信。
 
+## 界面
+
+| 登录 | 注册（含密码强度提示） |
+| --- | --- |
+| ![登录页](docs/screenshots/login.png) | ![注册页](docs/screenshots/register.png) |
+
+| 首页 | 密码管理 |
+| --- | --- |
+| ![首页](docs/screenshots/dashboard.png) | ![密码管理](docs/screenshots/password-list.png) |
+
+| 密码评估 | 日志查询 |
+| --- | --- |
+| ![密码评估](docs/screenshots/password-evaluate.png) | ![日志查询](docs/screenshots/log.png) |
+
+> 截图为 1440×760 真实运行截图（非设计稿）。配色、字体与组件状态的约定见下方「前端设计系统与约定」。
+
 ## 目录结构
 
 ```
@@ -19,6 +35,7 @@ cipherlens/
 │   ├── .env.development # 开发环境配置（代理到 http://localhost:8080）
 │   ├── .env.production  # 生产环境配置（接口前缀 /api，由 Nginx 反代）
 │   └── vite.config.js
+├── docs/screenshots/    # README 用的真实运行截图
 ├── backend/             # 后端：Spring Boot 3.5 + MyBatis-Plus + MySQL + Redis
 │   ├── src/main/java/com/dre4m1nd/cipherlens/
 │   ├── src/main/resources/application.yml
