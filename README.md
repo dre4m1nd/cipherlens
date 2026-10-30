@@ -11,6 +11,9 @@ cipherlens/
 ├── .gitignore
 ├── frontend/            # 前端：Vue 3 + Vite 2 + Element Plus + WindiCSS
 │   ├── src/
+│   │   ├── assets/style/palette.css  # 配色唯一来源（EP 主色阶 + 页面令牌）
+│   │   ├── assets/style/sfont.css    # 自托管图标字体（28 个字形）
+│   │   └── components/PasswordStrength.vue  # 密码强度条
 │   ├── Dockerfile       # 多阶段构建：node 构建 → nginx 托管
 │   ├── nginx.conf       # SPA 兜底 + /api 反代到后端
 │   ├── .env.development # 开发环境配置（代理到 http://localhost:8080）
@@ -81,6 +84,52 @@ npm run dev
 ```
 /api/user/login  →  http://localhost:8080/user/login
 ```
+
+### 前端设计系统与约定
+
+配色、字体、组件状态的单一来源和几个必踩的坑，改样式前先看这节。
+
+**配色只有一个来源：`src/assets/style/palette.css`**
+
+- Element Plus 主色阶（`--el-color-primary` 及 `light-3/5/7/8/9`、`dark-2`）与认证页/外壳色令牌全部在这里定义，改配色只动这一个文件。
+- 只改基色不够：EP 的 `light-*` / `dark-2` 在 `element-plus/dist/index.css` 里是**写死的**，不同时覆盖会导致 hover / disabled 变回默认蓝。
+- 令牌分两组：`--auth-*`（登录/注册/忘记密码）与 `--app-*`（登录后外壳与页面）。语义色 `--app-danger/warning/success` 比 EP 默认值深，因为 EP 的 `#f56c6c` / `#e6a23c` / `#67c23a` 做正文只有 3:1 左右。
+
+**主题色是双源，改侧栏/顶栏颜色必须改 JS**
+
+`src/theme/index.js` 里的 `menu` / `logo` / `header` 对象会被 `layout/Header/functionList/theme.vue` 在挂载时**写到 `<body>` 上**，优先级高于 `src/theme/index.css` 的同名变量。只改 CSS 不生效。改色时三处一起改：`theme/index.js`（真正生效）、`theme/index.css`（首屏兜底）、`windi.config.js`（`bg-primary` 这类工具类）。
+
+**图标字体自托管**
+
+`sfont` 字体（`src/assets/fonts/`，6KB woff2）来自原 `at.alicdn.com` 外链，已本地化并由 `src/assets/style/sfont.css` 引入。**只有 28 个字形**，用之前先 `grep` 一下 `sfont.css`：引用了不存在的字形会渲染成空白占位（历史上有 6 处这种问题）。
+
+**表单可访问性**
+
+Element Plus 2.3.8 **不会**自动把 `el-form-item` 的 label 关联到输入框（`labelFor` 依赖 input id 注册，这个版本没有）。所以每个带 label 的字段都要显式写 `for` + 控件 `id`：
+
+```html
+<el-form-item label="用户名" for="login-username">
+  <el-input id="login-username" name="username" autocomplete="username" />
+</el-form-item>
+```
+
+`el-select` / `el-date-picker` 内部结构不适合 for/id，用 `aria-label` 兜底。
+
+**认证页交互**
+
+- 服务端错误内联展示（`.auth-error`，`role="alert"`），不只弹 toast；校验失败焦点跳到第一个出错字段。
+- 密码框有 CapsLock 提示；注册/重置页有本地强度条（`src/utils/passwordStrength.js` + `components/PasswordStrength.vue`），**明文不外传**，权威评分仍走后端 `SecurityEvaluationUtil`。
+- 登录页「记住用户名」只存用户名到 `localStorage`，不存密码，默认不勾选。
+
+**依赖锁定**
+
+`vue` 与 `@vue/compiler-sfc` 锁在 `3.2.47`（精确版本，非 `^`）。升到 3.5 配 `@vitejs/plugin-vue@2.3.4` 会让 dev 下 SFC 的 `?vue&type=script` 子模块失效（build 仍能过，dev 白屏），要升就整条工具链一起升。
+
+> 注意：改完 `windi.config.js` / `theme/index.js` / `*.css` 后如果页面没变化，是 Vite 2 的模块缓存问题，重启 `npm run dev`。
+
+**本地 UX 产物**
+
+`.ux/` 存设计稿（`drafts/`）和校验截图（`shots/`），已加入 `.gitignore`，不入库。
 
 ## 生产构建
 
