@@ -10,11 +10,11 @@
         </div>
       </template>
       <el-form :inline="true" class="demo-form-inline mb-4" @submit.prevent="handleQuery">
-        <el-form-item label="应用名称">
-          <el-input v-model="queryParams.appName" name="appName" autocomplete="off" placeholder="请输入应用名称" clearable style="width: 200px" />
+        <el-form-item label="应用名称" for="query-app-name">
+          <el-input id="query-app-name" v-model="queryParams.appName" name="appName" autocomplete="off" placeholder="例如：GitHub" clearable style="width: 200px" />
         </el-form-item>
-        <el-form-item label="账号">
-          <el-input v-model="queryParams.account" name="account" autocomplete="off" placeholder="请输入账号" clearable style="width: 200px" />
+        <el-form-item label="账号" for="query-account">
+          <el-input id="query-account" v-model="queryParams.account" name="account" autocomplete="off" placeholder="例如：zhangsan@example.com" clearable style="width: 200px" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" native-type="submit">
@@ -25,7 +25,15 @@
           </el-button>
         </el-form-item>
       </el-form>
-      <el-table v-loading="loading" :data="passwordList" border style="width: 100%" stripe size="small">
+      <el-table
+        v-loading="loading"
+        :data="passwordList"
+        border
+        stripe
+        size="small"
+        style="width: 100%"
+        empty-text="还没有密码项，点右上角「添加密码项」记录第一条"
+      >
         <!-- 序号列，替换ID列 -->
         <el-table-column type="index" label="序号" width="72" align="center" />
         <!-- 合理分配列宽，确保操作列有足够空间 -->
@@ -66,17 +74,18 @@
       <el-dialog v-model="addDialogVisible" title="添加密码项" width="500px">
         <el-form ref="addFormRef" :model="addForm" :rules="addRules" label-width="100px" @submit.prevent="submitAddForm">
           <button type="submit" class="hidden" aria-hidden="true" tabindex="-1"></button>
-          <el-form-item label="应用名称" prop="appName">
-            <el-input v-model="addForm.appName" name="appName" autocomplete="off" placeholder="请输入应用名称" maxlength="50" />
+          <el-form-item label="应用名称" prop="appName" for="add-app-name">
+            <el-input id="add-app-name" v-model="addForm.appName" name="appName" autocomplete="off" placeholder="例如：GitHub" maxlength="50" />
           </el-form-item>
-          <el-form-item label="账号" prop="account">
-            <el-input v-model="addForm.account" name="account" autocomplete="off" placeholder="请输入账号" maxlength="50" />
+          <el-form-item label="账号" prop="account" for="add-account">
+            <el-input id="add-account" v-model="addForm.account" name="account" autocomplete="off" placeholder="例如：zhangsan@example.com" maxlength="50" />
           </el-form-item>
-          <el-form-item label="密码" prop="password">
-            <el-input v-model="addForm.password" type="password" name="new-password" autocomplete="new-password" placeholder="请输入密码" maxlength="100" show-password />
+          <el-form-item label="密码" prop="password" for="add-password">
+            <el-input id="add-password" v-model="addForm.password" type="password" name="new-password" autocomplete="new-password" placeholder="至少 8 位" maxlength="100" show-password />
           </el-form-item>
-          <el-form-item label="备注" prop="remark">
+          <el-form-item label="备注" prop="remark" for="add-remark">
             <el-input
+              id="add-remark"
               v-model="addForm.remark"
               type="textarea"
               :rows="3"
@@ -95,17 +104,18 @@
       <el-dialog v-model="editDialogVisible" title="编辑密码项" width="500px">
         <el-form ref="editFormRef" :model="editForm" :rules="editRules" label-width="100px" @submit.prevent="submitEditForm">
           <button type="submit" class="hidden" aria-hidden="true" tabindex="-1"></button>
-          <el-form-item label="应用名称" prop="appName">
-            <el-input v-model="editForm.appName" name="appName" autocomplete="off" placeholder="请输入应用名称" maxlength="50" />
+          <el-form-item label="应用名称" prop="appName" for="edit-app-name">
+            <el-input id="edit-app-name" v-model="editForm.appName" name="appName" autocomplete="off" placeholder="例如：GitHub" maxlength="50" />
           </el-form-item>
-          <el-form-item label="账号" prop="account">
-            <el-input v-model="editForm.account" name="account" autocomplete="off" placeholder="请输入账号" maxlength="50" />
+          <el-form-item label="账号" prop="account" for="edit-account">
+            <el-input id="edit-account" v-model="editForm.account" name="account" autocomplete="off" placeholder="例如：zhangsan@example.com" maxlength="50" />
           </el-form-item>
-          <el-form-item label="密码" prop="password">
-            <el-input v-model="editForm.password" type="password" name="new-password" autocomplete="new-password" placeholder="不修改请留空" maxlength="100" show-password />
+          <el-form-item label="密码" prop="password" for="edit-password">
+            <el-input id="edit-password" v-model="editForm.password" type="password" name="new-password" autocomplete="new-password" placeholder="不修改请留空" maxlength="100" show-password />
           </el-form-item>
-          <el-form-item label="备注" prop="remark">
+          <el-form-item label="备注" prop="remark" for="edit-remark">
             <el-input
+              id="edit-remark"
               v-model="editForm.remark"
               type="textarea"
               :rows="3"
@@ -329,7 +339,7 @@ export default defineComponent({
                 // 重新获取密码项列表
                 getPasswordList()
               })
-              .catch(err => {
+              .catch(() => {
                 ElMessage.error('添加失败')
               })
           }
@@ -389,7 +399,7 @@ export default defineComponent({
             dangerouslyUseHTMLString: false
           })
         })
-        .catch(err => {
+        .catch(() => {
           ElMessage.error('获取明文密码失败')
         })
     }

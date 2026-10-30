@@ -7,8 +7,8 @@
         </div>
       </template>
       <el-form :inline="true" class="demo-form-inline mb-4" @submit.prevent="handleQuery">
-        <el-form-item label="日志类型">
-          <el-select v-model="queryParams.operationType" placeholder="请选择日志类型" clearable style="width: 180px">
+        <el-form-item label="日志类型" for="log-type">
+          <el-select id="log-type" v-model="queryParams.operationType" aria-label="日志类型" placeholder="请选择日志类型" clearable style="width: 180px">
                   <el-option label="登录操作" value="LOGIN" />
                   <el-option label="登出操作" value="LOGOUT" />
                   <el-option label="添加操作" value="ADD" />
@@ -18,11 +18,13 @@
                   <el-option label="评估操作" value="EVALUATE" />
                 </el-select>
         </el-form-item>
-        <el-form-item label="操作内容">
-          <el-input v-model="queryParams.operationContent" name="operationContent" autocomplete="off" placeholder="请输入操作内容" clearable style="width: 200px" />
+        <el-form-item label="操作内容" for="log-content">
+          <el-input id="log-content" v-model="queryParams.operationContent" name="operationContent" autocomplete="off" placeholder="例如：密码条目" clearable style="width: 200px" />
         </el-form-item>
         <el-form-item label="操作时间">
           <el-date-picker
+            id="log-time-range"
+            aria-label="操作时间范围"
             v-model="queryParams.timeRange"
             type="datetimerange"
             range-separator="至"
@@ -42,7 +44,13 @@
           </el-button>
         </el-form-item>
       </el-form>
-      <el-table v-loading="loading" :data="logList" border style="width: 100%">
+      <el-table
+        v-loading="loading"
+        :data="logList"
+        border
+        style="width: 100%"
+        empty-text="这段时间还没有操作记录"
+      >
         <el-table-column prop="id" label="ID" width="80" class-name="tabular-nums" />
         <el-table-column prop="operationType" label="日志类型" width="120">
           <template #default="scope">

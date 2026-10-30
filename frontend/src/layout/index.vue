@@ -2,6 +2,7 @@
   <el-container style="height: 100vh">
     <div
       class="mask"
+      aria-hidden="true"
       v-show="!isCollapse && !contentFullScreen"
       @click="hideMenu"
     ></div>
@@ -41,7 +42,6 @@
 <script lang="js">
 import { defineComponent, computed, onBeforeMount } from "vue";
 import { useStore } from "vuex";
-import { useRouter } from "vue-router";
 import { useEventListener } from "@vueuse/core";
 import Menu from "./Menu/index.vue";
 import Logo from "./Logo/index.vue";
@@ -103,12 +103,18 @@ export default defineComponent({
 .el-aside {
   display: flex;
   flex-direction: column;
-  transition: all 0.3s;
+  transition: width 0.3s ease;
   overflow-x: hidden;
 }
 
 .el-aside::-webkit-scrollbar {
   width: 0 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .el-aside {
+    transition: none;
+  }
 }
 
 .el-main {

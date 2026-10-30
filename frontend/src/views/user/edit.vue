@@ -7,11 +7,12 @@
         </div>
       </template>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" @submit.prevent="submitForm(formRef)">
-        <el-form-item label="用户名" prop="username">
-          <el-input v-model="form.username" name="username" autocomplete="username" spellcheck="false" placeholder="请输入用户名" maxlength="50" />
+        <el-form-item label="用户名" prop="username" for="edit-user-username">
+          <el-input id="edit-user-username" v-model="form.username" name="username" autocomplete="username" spellcheck="false" placeholder="例如：zhangsan" maxlength="50" />
         </el-form-item>
-        <el-form-item label="密码" prop="password">
-          <el-input v-model="form.password" type="password" name="new-password" autocomplete="new-password" placeholder="请输入密码（不修改请保持为空）" maxlength="64" show-password />
+        <el-form-item label="新密码" prop="password" for="edit-user-password">
+          <el-input id="edit-user-password" v-model="form.password" type="password" name="new-password" autocomplete="new-password" placeholder="至少 8 位" maxlength="64" show-password />
+          <p class="form-hint">不修改密码就保持留空</p>
         </el-form-item>
         <el-form-item>
           <el-button type="primary" native-type="submit">提交</el-button>
@@ -52,7 +53,7 @@ export default defineComponent({
           form.username = data.username
           form.password = '' // 密码不显示，每次修改都需要重新输入
         })
-        .catch(err => {
+        .catch(() => {
           ElMessage.error('加载用户信息失败')
         })
     }
@@ -69,7 +70,7 @@ export default defineComponent({
             .then(() => {
               ElMessage.success('更新成功')
             })
-            .catch(err => {
+            .catch(() => {
               ElMessage.error('更新失败')
             })
         }

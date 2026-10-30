@@ -83,6 +83,15 @@
   }
 }
 
+
+/* 表单字段下方的辅助说明（规则、可选提示） */
+.form-hint {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--app-ink-soft);
+}
+
 /* 表格里的数字等宽，日期/序号纵向对得齐 */
 .el-table {
   font-variant-numeric: tabular-nums;

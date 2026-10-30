@@ -220,6 +220,7 @@ export default defineComponent({
             if (countdown.value <= 0) {
               clearInterval(countdownTimer)
               countdownTimer = null
+              liveMessage.value = '可以重新发送验证码了'
             }
           }, 1000)
         })

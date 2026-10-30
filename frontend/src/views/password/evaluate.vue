@@ -9,10 +9,11 @@
       <!-- 密码输入区域 -->
       <div class="password-input-container">
         <el-form :model="passwordForm" label-width="80px" size="large" @submit.prevent="handleEvaluate">
-          <el-form-item label="密码">
-            <el-input 
+          <el-form-item label="待评估密码" for="evaluate-password">
+            <el-input
+              id="evaluate-password"
               v-model="passwordForm.password" 
-              placeholder="请输入要评估的密码" 
+              placeholder="输入任意密码，不会保存" 
               type="password" 
               show-password 
               name="password"
@@ -34,8 +35,8 @@
         <el-skeleton :rows="10" animated />
       </div>
       
-      <!-- 评估结果区域 -->
-      <div v-else-if="evaluateResult">
+      <!-- 评估结果区域：异步替换，需要播报 -->
+      <div v-else-if="evaluateResult" role="status" aria-live="polite">
         <el-descriptions title="评估结果" :column="1" border>
           <el-descriptions-item label="评估分数">
             <span class="tabular-nums text-[18px] font-semibold">{{ evaluateResult.evaluateScore }} 分</span>
@@ -115,7 +116,7 @@ export default defineComponent({
             ElMessage.error((res && res.message) || '评估失败')
           }
         })
-        .catch(err => {
+        .catch(() => {
           loading.value = false
           ElMessage.error('评估失败')
         })
