@@ -1,6 +1,6 @@
 /**
  * 本地密码强度评估（不外传明文）
- * 只用于输入时的即时提示；权威评分仍以后端 SecurityEvaluationUtil 为准。
+ * 只用于输入时的即时提示与可视化；权威评分仍以后端 SecurityEvaluationUtil 为准。
  */
 
 // 高频弱密码样本，命中直接判为最弱
@@ -20,21 +20,17 @@ const LEVELS = {
   4: { score: 4, label: '强', hint: '' }
 }
 
+const SEQUENCE_RE = /(abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz|012|123|234|345|456|567|678|789)/i
+const REVERSE_SEQUENCE_RE = /(cba|dcb|edc|fed|gfe|hgf|ihg|jih|kji|lkj|mlk|nml|onm|pon|qpo|rqp|srq|tsr|uts|vut|wvu|xwv|yxw|zyx|210|321|432|543|654|765|876|987)/i
+const TRIPLE_REPEAT_RE = /(.)\1{2,}/
+
 /** 常见连续/重复模式：abcd、4321、aaaa */
 function hasSequence(pwd) {
-  const lower = pwd.toLowerCase()
-  for (let i = 0; i < lower.length - 2; i++) {
-    const a = lower.charCodeAt(i)
-    const b = lower.charCodeAt(i + 1)
-    const c = lower.charCodeAt(i + 2)
-    if (b - a === 1 && c - b === 1) return true
-    if (a - b === 1 && b - c === 1) return true
-    if (a === b && b === c) return true
-  }
-  return false
+  return SEQUENCE_RE.test(pwd) || REVERSE_SEQUENCE_RE.test(pwd) || TRIPLE_REPEAT_RE.test(pwd)
 }
 
 /**
+ * 强度等级
  * @param {string} password
  * @returns {{score: number, label: string, hint: string}}
  */
@@ -69,4 +65,52 @@ export function evaluateLocal(password) {
   return LEVELS[score]
 }
 
-export default { evaluateLocal }
+/**
+ * 五个维度的本地拆解，用于评估结果雷达图。
+ * 与后端 SecurityEvaluationUtil 的口径不完全相同，仅作可视化参考。
+ * @param {string} password
+ * @returns {{name: string, value: number}[]}
+ */
+export function evaluateDimensions(password) {
+  const pwd = password || ''
+  const empty = [
+    { name: '长度', value: 0 },
+    { name: '大小写', value: 0 },
+    { name: '数字', value: 0 },
+    { name: '符号', value: 0 },
+    { name: '无规律', value: 0 }
+  ]
+  if (!pwd) return empty
+
+  const lenScore = Math.min(100, Math.round((pwd.length / 16) * 100))
+
+  const hasLower = /[a-z]/.test(pwd)
+  const hasUpper = /[A-Z]/.test(pwd)
+  let caseScore = 0
+  if (hasLower && hasUpper) caseScore = 100
+  else if (hasLower || hasUpper) caseScore = 45
+
+  const digits = (pwd.match(/\d/g) || []).length
+  let digitScore = 0
+  if (digits >= 2) digitScore = 100
+  else if (digits === 1) digitScore = 65
+  if (/^\d+$/.test(pwd)) digitScore = Math.min(digitScore, 30)
+
+  const symbolScore = /[^A-Za-z0-9]/.test(pwd) ? 100 : 0
+
+  let orderScore = 100
+  if (hasSequence(pwd)) orderScore -= 45
+  if (TRIPLE_REPEAT_RE.test(pwd)) orderScore -= 35
+  if (COMMON_PASSWORDS.includes(pwd.toLowerCase())) orderScore = 0
+  orderScore = Math.max(0, orderScore)
+
+  return [
+    { name: '长度', value: lenScore },
+    { name: '大小写', value: caseScore },
+    { name: '数字', value: digitScore },
+    { name: '符号', value: symbolScore },
+    { name: '无规律', value: orderScore }
+  ]
+}
+
+export default { evaluateLocal, evaluateDimensions }

@@ -9,7 +9,7 @@
       <!-- 密码输入区域 -->
       <div class="password-input-container">
         <el-form :model="passwordForm" label-width="80px" size="large" @submit.prevent="handleEvaluate">
-          <el-form-item label="待评估密码" for="evaluate-password">
+          <el-form-item label="密码" for="evaluate-password">
             <el-input
               id="evaluate-password"
               v-model="passwordForm.password" 
@@ -43,7 +43,7 @@
           </el-descriptions-item>
           <el-descriptions-item label="风险类型">
             <el-tag :type="riskLevelType">
-              {{ evaluateResult.riskType }}
+              {{ evaluateResult.riskType || '无' }}
             </el-tag>
           </el-descriptions-item>
           <el-descriptions-item label="评估建议">{{ evaluateResult.suggestions }}</el-descriptions-item>
@@ -57,7 +57,23 @@
               <span>密码强度分析</span>
             </div>
           </template>
-          <el-progress type="dashboard" :percentage="evaluateResult.evaluateScore" :width="150" />
+          <div class="analysis-grid">
+            <div class="analysis-score">
+              <el-progress
+                  type="dashboard"
+                  :percentage="evaluateResult.evaluateScore"
+                  :width="150"
+                  :color="scoreColor"
+              />
+              <p class="analysis-caption">服务端评估总分</p>
+            </div>
+            <div class="analysis-radar">
+              <div class="analysis-radar-box">
+                <Charts :option="radarOption" />
+              </div>
+              <p class="analysis-caption">五个维度为本地拆解，仅作参考</p>
+            </div>
+          </div>
         </el-card>
       </div>
       
@@ -77,8 +93,11 @@
 import { defineComponent, reactive, ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { evaluatePasswordByInputApi } from '@/api/passwordItem'
+import Charts from '@/components/charts/index.vue'
+import { evaluateDimensions } from '@/utils/passwordStrength'
 
 export default defineComponent({
+  components: { Charts },
   setup() {
     const loading = ref(false)
     const evaluateResult = ref(null)
@@ -88,6 +107,58 @@ export default defineComponent({
       password: ''
     })
     
+    /** 分数配色：低于 60 危险、60-80 提醒、其余用主色 */
+    const scoreColor = computed(() => {
+      const score = evaluateResult.value ? evaluateResult.value.evaluateScore : 0
+      const cssVar = (name, fallback) => {
+        const v = getComputedStyle(document.documentElement).getPropertyValue(name)
+        return v && v.trim() ? v.trim() : fallback
+      }
+      if (score < 60) return cssVar('--app-danger', '#b3261e')
+      if (score < 80) return cssVar('--app-warning', '#8a5a00')
+      return cssVar('--app-accent', '#0f766e')
+    })
+
+    /** 图表配色从 CSS 令牌读，避免在 JS 里再写一份色值 */
+    const cssVar = (name, fallback) => {
+      const v = getComputedStyle(document.documentElement).getPropertyValue(name)
+      return v && v.trim() ? v.trim() : fallback
+    }
+
+    const radarOption = computed(() => {
+      const dims = evaluateDimensions(passwordForm.password)
+      const accent = cssVar('--app-accent', '#0f766e')
+      const line = cssVar('--app-line', '#e3e9e7')
+      const inkSoft = cssVar('--app-ink-soft', '#4f5b59')
+      return {
+        tooltip: {},
+        radar: {
+          indicator: dims.map((d) => ({ name: d.name, max: 100 })),
+          radius: '62%',
+          splitNumber: 4,
+          axisName: { color: inkSoft, fontSize: 12 },
+          splitLine: { lineStyle: { color: line } },
+          splitArea: { show: false },
+          axisLine: { lineStyle: { color: line } }
+        },
+        series: [
+          {
+            type: 'radar',
+            symbolSize: 4,
+            data: [
+              {
+                value: dims.map((d) => d.value),
+                name: '本地拆解',
+                lineStyle: { color: accent, width: 2 },
+                itemStyle: { color: accent },
+                areaStyle: { color: accent, opacity: 0.16 }
+              }
+            ]
+          }
+        ]
+      }
+    })
+
     // 根据风险类型获取标签类型
     const riskLevelType = computed(() => {
       if (!evaluateResult.value) return 'info'
@@ -132,6 +203,8 @@ export default defineComponent({
       loading,
       evaluateResult,
       riskLevelType,
+      scoreColor,
+      radarOption,
       passwordForm,
       handleEvaluate,
       handleReset
@@ -186,6 +259,39 @@ export default defineComponent({
 
 .loading-container {
   padding: 20px;
+}
+
+.analysis-grid {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 400px);
+  gap: 48px;
+  align-items: center;
+  justify-content: center;
+}
+
+.analysis-score,
+.analysis-radar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.analysis-radar-box {
+  width: 100%;
+  height: 240px;
+}
+
+.analysis-caption {
+  margin: 0;
+  font-size: 12px;
+  color: var(--app-ink-soft);
+}
+
+@media (max-width: 900px) {
+  .analysis-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .password-input-container {

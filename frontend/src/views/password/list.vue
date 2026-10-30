@@ -25,8 +25,20 @@
           </el-button>
         </el-form-item>
       </el-form>
+      <div v-if="selectedRows.length" class="batch-bar" role="region" aria-label="批量操作">
+        <span class="batch-count">已选 {{ selectedRows.length }} 项</span>
+        <div class="batch-actions">
+          <el-button size="small" @click="batchEvaluate">批量评估</el-button>
+          <el-button size="small" @click="exportCsv">导出 CSV</el-button>
+          <el-button size="small" type="danger" plain @click="batchDelete">批量删除</el-button>
+          <el-button size="small" text @click="clearSelection">取消选择</el-button>
+        </div>
+      </div>
+
       <el-table
+        ref="tableRef"
         v-loading="loading"
+        @selection-change="handleSelectionChange"
         :data="passwordList"
         border
         stripe
@@ -34,6 +46,7 @@
         style="width: 100%"
         empty-text="还没有密码项，点右上角「添加密码项」记录第一条"
       >
+        <el-table-column type="selection" width="44" align="center" />
         <!-- 序号列，替换ID列 -->
         <el-table-column type="index" label="序号" width="72" align="center" />
         <!-- 合理分配列宽，确保操作列有足够空间 -->
@@ -81,7 +94,11 @@
             <el-input id="add-account" v-model="addForm.account" name="account" autocomplete="off" placeholder="例如：zhangsan@example.com" maxlength="50" />
           </el-form-item>
           <el-form-item label="密码" prop="password" for="add-password">
-            <el-input id="add-password" v-model="addForm.password" type="password" name="new-password" autocomplete="new-password" placeholder="至少 8 位" maxlength="100" show-password />
+            <el-input id="add-password" v-model="addForm.password" type="password" name="new-password" autocomplete="new-password" placeholder="至少 8 位" maxlength="100" show-password>
+              <template #append>
+                <el-button aria-label="生成随机密码" @click="openGenerator('add')">生成</el-button>
+              </template>
+            </el-input>
           </el-form-item>
           <el-form-item label="备注" prop="remark" for="add-remark">
             <el-input
@@ -111,7 +128,11 @@
             <el-input id="edit-account" v-model="editForm.account" name="account" autocomplete="off" placeholder="例如：zhangsan@example.com" maxlength="50" />
           </el-form-item>
           <el-form-item label="密码" prop="password" for="edit-password">
-            <el-input id="edit-password" v-model="editForm.password" type="password" name="new-password" autocomplete="new-password" placeholder="不修改请留空" maxlength="100" show-password />
+            <el-input id="edit-password" v-model="editForm.password" type="password" name="new-password" autocomplete="new-password" placeholder="不修改请留空" maxlength="100" show-password>
+              <template #append>
+                <el-button aria-label="生成随机密码" @click="openGenerator('edit')">生成</el-button>
+              </template>
+            </el-input>
           </el-form-item>
           <el-form-item label="备注" prop="remark" for="edit-remark">
             <el-input
@@ -144,6 +165,28 @@
           <el-button type="primary" @click="evaluateDialogVisible = false">关闭</el-button>
         </template>
       </el-dialog>
+      <!-- 批量评估结果 -->
+      <el-dialog v-model="batchResultVisible" title="批量评估结果" width="560px">
+        <el-table :data="batchResults" size="small" border style="width: 100%">
+          <el-table-column prop="appName" label="应用名称" min-width="120" show-overflow-tooltip />
+          <el-table-column prop="account" label="账号" min-width="140" show-overflow-tooltip />
+          <el-table-column label="评估分数" width="100" align="center">
+            <template #default="scope">
+              <el-tag v-if="scope.row.ok" :type="scoreTagType(scope.row.score)">{{ scope.row.score }}</el-tag>
+              <span v-else class="text-muted">失败</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="riskType" label="风险类型" min-width="120" show-overflow-tooltip>
+            <template #default="scope">{{ scope.row.ok ? (scope.row.riskType || '无') : '评估失败（可能未配置 KMS）' }}</template>
+          </el-table-column>
+        </el-table>
+        <template #footer>
+          <el-button type="primary" @click="batchResultVisible = false">关闭</el-button>
+        </template>
+      </el-dialog>
+
+      <!-- 随机密码生成器 -->
+      <PasswordGenerator v-model="generatorVisible" @use="applyGenerated" />
     </el-card>
   </div>
 </template>
@@ -153,14 +196,22 @@ import { defineComponent, ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getPasswordItemListApi, deletePasswordItemApi, addPasswordItemApi, getPasswordItemApi, updatePasswordItemApi, getPasswordPlainTextApi, evaluatePasswordApi } from '@/api/passwordItem'
+import PasswordGenerator from '@/components/PasswordGenerator.vue'
 
 export default defineComponent({
-  
+  components: { PasswordGenerator },
   setup() {
     const route = useRoute()
     const router = useRouter()
     const addDialogVisible = ref(false)
     const editDialogVisible = ref(false)
+    const tableRef = ref(null)
+    const selectedRows = ref([])
+    const generatorVisible = ref(false)
+    const generatorTarget = ref('add')
+    const batchResultVisible = ref(false)
+    const batchResults = ref([])
+    const batchRunning = ref(false)
     const evaluateDialogVisible = ref(false)
     const evaluateResult = ref({})
     const editPasswordId = ref('')
@@ -405,6 +456,99 @@ export default defineComponent({
     }
 
     // 删除密码项
+    /* ---------- 密码生成器 ---------- */
+    const openGenerator = (target) => {
+      generatorTarget.value = target
+      generatorVisible.value = true
+    }
+
+    const applyGenerated = (pwd) => {
+      if (generatorTarget.value === 'add') addForm.password = pwd
+      else editForm.password = pwd
+    }
+
+    /* ---------- 批量操作 ---------- */
+    const handleSelectionChange = (rows) => {
+      selectedRows.value = rows
+    }
+
+    const clearSelection = () => {
+      if (tableRef.value) tableRef.value.clearSelection()
+      selectedRows.value = []
+    }
+
+    const batchDelete = () => {
+      const count = selectedRows.value.length
+      if (!count) return
+      ElMessageBox.confirm(
+          `确定要删除选中的 ${count} 个密码项吗？此操作不可撤销。`,
+          '批量删除',
+          { confirmButtonText: '确定删除', cancelButtonText: '取消', type: 'warning' }
+      ).then(async () => {
+        const ids = selectedRows.value.map((r) => r.id)
+        const results = await Promise.allSettled(ids.map((id) => deletePasswordItemApi(id)))
+        const ok = results.filter((r) => r.status === 'fulfilled').length
+        const fail = results.length - ok
+        if (fail === 0) ElMessage.success(`已删除 ${ok} 项`)
+        else ElMessage.warning(`删除完成：成功 ${ok} 项，失败 ${fail} 项`)
+        clearSelection()
+        handleQuery()
+      }).catch(() => {})
+    }
+
+    const batchEvaluate = async () => {
+      const rows = selectedRows.value.slice()
+      if (!rows.length) return
+      batchRunning.value = true
+      batchResults.value = []
+      const out = []
+      for (const row of rows) {
+        try {
+          const res = await evaluatePasswordApi(row.id)
+          const data = res && res.data ? res.data : {}
+          out.push({
+            appName: row.appName,
+            account: row.account,
+            score: data.evaluateScore,
+            riskType: data.riskType,
+            ok: true
+          })
+        } catch (e) {
+          out.push({ appName: row.appName, account: row.account, ok: false })
+        }
+      }
+      batchResults.value = out
+      batchRunning.value = false
+      batchResultVisible.value = true
+    }
+
+    const scoreTagType = (score) => {
+      if (score == null) return 'info'
+      if (score >= 80) return 'success'
+      if (score >= 60) return 'warning'
+      return 'danger'
+    }
+
+    /** 导出选中项为 CSV（不含明文密码） */
+    const exportCsv = () => {
+      const rows = selectedRows.value
+      if (!rows.length) return
+      const header = ['应用名称', '账号', '备注', '创建时间', '更新时间']
+      const escape = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`
+      const lines = rows.map((r) => [r.appName, r.account, r.remark, r.createTime, r.updateTime].map(escape).join(','))
+      const csv = String.fromCharCode(65279) + header.join(",") + '\n' + lines.join('\n')
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `密码项-${new Date().toISOString().slice(0, 10)}.csv`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      ElMessage.success(`已导出 ${rows.length} 项`)
+    }
+
     const handleDelete = (row) => {
       ElMessageBox.confirm('确定要删除该密码项吗？', '警告', {
         confirmButtonText: '确定',
@@ -480,13 +624,53 @@ export default defineComponent({
       editFormRef,
       editForm,
       editRules,
-      submitEditForm
+      submitEditForm,
+      tableRef,
+      selectedRows,
+      handleSelectionChange,
+      clearSelection,
+      batchDelete,
+      batchEvaluate,
+      exportCsv,
+      scoreTagType,
+      batchResultVisible,
+      batchResults,
+      batchRunning,
+      generatorVisible,
+      openGenerator,
+      applyGenerated
     }
   }
 })
 </script>
 
 <style scoped>
+.batch-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background-color: var(--app-row-hover);
+  border-radius: 4px;
+}
+
+.batch-count {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--app-ink);
+}
+
+.batch-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.text-muted {
+  color: var(--app-ink-soft);
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;
