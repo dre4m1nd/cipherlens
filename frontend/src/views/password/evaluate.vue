@@ -69,7 +69,7 @@
             </div>
             <div class="analysis-radar">
               <div class="analysis-radar-box">
-                <Charts :option="radarOption" />
+                <Charts :option="radarOption" :aria-label="radarSummary" />
               </div>
               <p class="analysis-caption">五个维度为本地拆解，仅作参考</p>
             </div>
@@ -107,6 +107,13 @@ export default defineComponent({
       password: ''
     })
     
+    /** 雷达图的文本替代：把五个维度读成一句话，读屏才拿得到 */
+    const radarSummary = computed(() => {
+      const dims = evaluateDimensions(passwordForm.password)
+      const parts = dims.map((d) => d.name + ' ' + d.value + ' 分').join('，')
+      return '密码强度五维图（本地拆解，仅供参考）：' + parts
+    })
+
     /** 分数配色：低于 60 危险、60-80 提醒、其余用主色 */
     const scoreColor = computed(() => {
       const score = evaluateResult.value ? evaluateResult.value.evaluateScore : 0
@@ -205,6 +212,7 @@ export default defineComponent({
       riskLevelType,
       scoreColor,
       radarOption,
+      radarSummary,
       passwordForm,
       handleEvaluate,
       handleReset

@@ -26,12 +26,14 @@
         </el-form-item>
       </el-form>
       <div v-if="selectedRows.length" class="batch-bar" role="region" aria-label="批量操作">
-        <span class="batch-count">已选 {{ selectedRows.length }} 项</span>
+        <span class="batch-count" aria-live="polite">
+          已选 {{ selectedRows.length }} 项<template v-if="batchRunning">，正在评估 {{ batchProgress.done }}/{{ batchProgress.total }}</template>
+        </span>
         <div class="batch-actions">
-          <el-button size="small" @click="batchEvaluate">批量评估</el-button>
-          <el-button size="small" @click="exportCsv">导出 CSV</el-button>
-          <el-button size="small" type="danger" plain @click="batchDelete">批量删除</el-button>
-          <el-button size="small" text @click="clearSelection">取消选择</el-button>
+          <el-button size="small" :loading="batchRunning" :disabled="batchRunning" @click="batchEvaluate">批量评估</el-button>
+          <el-button size="small" :disabled="batchRunning" @click="exportCsv">导出 CSV</el-button>
+          <el-button size="small" type="danger" plain :disabled="batchRunning" @click="batchDelete">批量删除</el-button>
+          <el-button size="small" text :disabled="batchRunning" @click="clearSelection">取消选择</el-button>
         </div>
       </div>
 
@@ -167,7 +169,7 @@
       </el-dialog>
       <!-- 批量评估结果 -->
       <el-dialog v-model="batchResultVisible" title="批量评估结果" width="560px">
-        <el-table :data="batchResults" size="small" border style="width: 100%">
+        <el-table :data="batchResults" size="small" border style="width: 100%" empty-text="没有可显示的结果">
           <el-table-column prop="appName" label="应用名称" min-width="120" show-overflow-tooltip />
           <el-table-column prop="account" label="账号" min-width="140" show-overflow-tooltip />
           <el-table-column label="评估分数" width="100" align="center">
@@ -212,6 +214,7 @@ export default defineComponent({
     const batchResultVisible = ref(false)
     const batchResults = ref([])
     const batchRunning = ref(false)
+    const batchProgress = reactive({ done: 0, total: 0 })
     const evaluateDialogVisible = ref(false)
     const evaluateResult = ref({})
     const editPasswordId = ref('')
@@ -501,6 +504,8 @@ export default defineComponent({
       if (!rows.length) return
       batchRunning.value = true
       batchResults.value = []
+      batchProgress.done = 0
+      batchProgress.total = rows.length
       const out = []
       for (const row of rows) {
         try {
@@ -516,6 +521,7 @@ export default defineComponent({
         } catch (e) {
           out.push({ appName: row.appName, account: row.account, ok: false })
         }
+        batchProgress.done++
       }
       batchResults.value = out
       batchRunning.value = false
@@ -534,14 +540,16 @@ export default defineComponent({
       const rows = selectedRows.value
       if (!rows.length) return
       const header = ['应用名称', '账号', '备注', '创建时间', '更新时间']
-      const escape = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`
-      const lines = rows.map((r) => [r.appName, r.account, r.remark, r.createTime, r.updateTime].map(escape).join(','))
+      const csvCell = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`
+      const lines = rows.map((r) => [r.appName, r.account, r.remark, r.createTime, r.updateTime].map(csvCell).join(','))
       const csv = String.fromCharCode(65279) + header.join(",") + '\n' + lines.join('\n')
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `密码项-${new Date().toISOString().slice(0, 10)}.csv`
+      const now = new Date()
+      const pad = (n) => String(n).padStart(2, '0')
+      a.download = `密码项-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}.csv`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -636,6 +644,7 @@ export default defineComponent({
       batchResultVisible,
       batchResults,
       batchRunning,
+      batchProgress,
       generatorVisible,
       openGenerator,
       applyGenerated

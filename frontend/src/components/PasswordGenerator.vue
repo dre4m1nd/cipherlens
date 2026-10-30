@@ -19,6 +19,9 @@
 
     <PasswordStrength :password="password" />
 
+    <!-- 只播报「已生成」，不把密码念出来（旁人在场时会被听到） -->
+    <p class="sr-only" role="status" aria-live="polite">{{ liveMessage }}</p>
+
     <el-form label-position="top" class="gen-options" @submit.prevent>
       <el-form-item :label="`长度：${length}`" for="gen-length">
         <el-slider
@@ -29,6 +32,7 @@
             :step="1"
             :show-tooltip="false"
             aria-label="密码长度"
+            :aria-valuetext="length + ' 位'"
             @change="generate"
         />
       </el-form-item>
@@ -91,6 +95,7 @@ export default defineComponent({
     const useSymbol = ref(true)
     const avoidAmbiguous = ref(true)
     const password = ref('')
+    const liveMessage = ref('')
 
     const pools = computed(() => {
       const list = []
@@ -126,6 +131,7 @@ export default defineComponent({
         chars[j] = tmp
       }
       password.value = chars.slice(0, length.value).join('')
+      liveMessage.value = '已生成 ' + length.value + ' 位新密码'
     }
 
     const copy = async () => {
@@ -151,7 +157,7 @@ export default defineComponent({
 
     return {
       length, useUpper, useLower, useDigit, useSymbol, avoidAmbiguous,
-      password, canGenerate, generate, copy, use
+      password, liveMessage, canGenerate, generate, copy, use
     }
   }
 })
